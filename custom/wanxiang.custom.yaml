@@ -51,6 +51,8 @@ patch:
     - name: emoji
       states: [ 💀, 😄 ]
       reset: 0
+    - name: udpf_switch
+      states: [ 关, U编]
     - name: chinese_english
       states: [ 关, 翻译 ]
     - name: sentence
@@ -92,6 +94,7 @@ patch:
     - simplifier@chaifen #拆分滤镜
     - simplifier@pinyin #拼音滤镜  
     - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
+    - lua_filter@*unicode_display #Unicode编码显示
     #- simplifier@moqi_chaifen                       #墨奇拆分型辅助码查询，放在超级注释后面
     #- simplifier@zrm_chaifen                        #自然码拆分型辅助码查询，放在超级注释后面
     - uniquifier 
