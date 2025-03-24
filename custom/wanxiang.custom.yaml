@@ -7,7 +7,7 @@
 patch:
 
   schema/dependencies/+: 
-    - tiger_sentence
+    - sentence
   schema/dependencies/+: 
     - common  
   
@@ -216,7 +216,7 @@ patch:
 
   tiger_sentence:
     tag: tiger_sentence  
-    dictionary: tiger_sentence
+    dictionary: sentence
     db_class: stabledb
     enable_user_dict: true
     enable_completion: false
