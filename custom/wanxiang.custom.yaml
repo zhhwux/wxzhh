@@ -34,6 +34,9 @@ patch:
       reset: 1   
     - name: simple
       states: [ 两码句, 原码句 ]
+    - name: yin
+      states: [ 关, 音码 ]
+      reset: 1   
     - name: super_tips
       states: [ off, tips ]
       reset: 1
@@ -47,7 +50,7 @@ patch:
     - name: traditionalization
       states: [ 简, 繁 ]
     - name: emoji
-      states: [ 💀, 😄 ]
+      states: [ 🙃, 😄 ]
       reset: 0
     - name: udpf_switch
       states: [ 关, U编]
@@ -66,7 +69,7 @@ patch:
     - lua_translator@*shijian            # 时间、日期、星期、农历、节气、时辰等等
     - lua_translator@*unicode            # Unicode
     - lua_translator@*number_translator  # 数字、金额大写
-    - lua_translator@*calculator         # 计算器
+    - lua_translator@*super_calculator   # 计算器
     - table_translator@melt_eng          # 英文输入
     - table_translator@cn_en             # 中英混合词汇
     - table_translator@chengyu           # 简码成语
@@ -76,8 +79,8 @@ patch:
     - script_translator@add_user_dict
     - lua_translator@*force_gc          # 暴力 GC 降低内存
   engine/filters:
-    - lua_filter@*common_filter                     #字符集过滤
-    #- lua_filter@*chars_filter                      #字符集过滤
+    - lua_filter@*common_filter                     #全局字符集过滤
+    #- lua_filter@*chars_filter                      #单字字符集过滤
     - lua_filter@*cold_word_drop.filter
     #- lua_filter@*assist_sort
     - lua_filter@*remove_tiger_filter             # 虎码开关
