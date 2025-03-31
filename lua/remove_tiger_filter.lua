@@ -87,6 +87,7 @@ function M.func(input, env)
             seg:has_tag("radical_lookup") 
             or seg:has_tag("reverse_stroke") 
             or seg:has_tag("add_user_dict")
+            or seg:has_tag("emoji")
         ) or false
         if env.is_radical_mode then
             table.insert(fc_candidates, cand)
@@ -120,20 +121,20 @@ function M.func(input, env)
     local useless_candidates = {}
     local yc_candidates = {}    -- 预测候选词
     
-    local input_preedit = context:get_preedit().text
     for _, cand in ipairs(unique_candidates) do
+    local input_preedit = context:get_preedit().text
     local letter_count = 0
     for _ in input_preedit:gmatch("%a") do 
         letter_count = letter_count + 1
     end
     local cand_length = utf8.len(cand.preedit)
-    
+
         if letter_count == 0 then
             table.insert(yc_candidates, cand)
-        elseif letter_count ~= cand_length then
-            table.insert(useless_candidates, cand)
         elseif cand_length  >= 5 then
             table.insert(tiger_sentence, cand)
+        elseif letter_count ~= cand_length then
+            table.insert(useless_candidates, cand)
         else
             table.insert(tiger_tigress, cand)
         end
@@ -168,24 +169,59 @@ function M.func(input, env)
     -- 🐯 虎句开关
     if context:get_option("tiger-sentence") then
     -- 拆分虎句组为第一组和第二组
+        local one_tiger = {}
+        local two_tiger = {}
         local first_tiger = {}
-        local rest_tiger = {}
+        local second_tiger = {}
+        local zj = {}
         local first_group_assigned = false
         for _, cand in ipairs(tiger_sentence) do
+            
+        local input_preedit = context:get_preedit().text
+        local letter_count = 0
+        for _ in input_preedit:gmatch("%a") do 
+            letter_count = letter_count + 1
+        end
+        local candletter_count = 0
+        for _ in cand.preedit:gmatch("%a") do 
+            candletter_count = candletter_count + 1
+        end
+        
+            if letter_count ~= candletter_count then
+                table.insert(one_tiger, cand)
+            else
+                table.insert(two_tiger, cand)
+            end
+        end
+        for _, cand in ipairs(two_tiger) do
             if not first_group_assigned then
             -- 如果还没有分配第一个候选到第一组，则将当前候选放入第一组
                 table.insert(first_tiger, cand)
                 first_group_assigned = true  -- 标记已经分配了第一个候选   
             else
-                table.insert(rest_tiger, cand)
+                table.insert(second_tiger, cand)
             end
         end   
+        if #second_tiger == 0 then
+            for _, cand in ipairs(first_tiger) do
+                table.insert(zj, cand)
+            end
+        end
         if context:get_option("simple") then
             for _, cand in ipairs(first_tiger) do
                 yield(cand)
-            end      
+            end       
+            for _, cand in ipairs(one_tiger) do
+                yield(cand)
+            end
             else
-            for _, cand in ipairs(rest_tiger) do
+            for _, cand in ipairs(second_tiger) do
+                yield(cand)
+            end
+            for _, cand in ipairs(zj) do
+                yield(cand)
+            end
+            for _, cand in ipairs(one_tiger) do
                 yield(cand)
             end
         end   
@@ -204,9 +240,11 @@ function M.func(input, env)
     local first_cand = nil
     local candidates = {}
 
-    for _, cand in ipairs(other_candidates) do
-        if not first_cand then first_cand = cand end
-        table.insert(candidates, cand)
+    if context:get_option("yin") then
+      for _, cand in ipairs(other_candidates) do
+          if not first_cand then first_cand = cand end
+          table.insert(candidates, cand)
+      end
     end
 
     -- **如果输入码长 > 4，则直接输出默认排序**
@@ -293,14 +331,18 @@ function M.func(input, env)
 
 
     -- 字母候选词
-    for _, cand in ipairs(alnum_candidates) do
-        yield(cand)
+    if context:get_option("chinese_english") then
+       for _, cand in ipairs(alnum_candidates) do
+          yield(cand)
+       end
     end
 
     -- 预测候选词
     for _, cand in ipairs(yc_candidates) do
         yield(cand)
     end
+    
+
 
 end
 
