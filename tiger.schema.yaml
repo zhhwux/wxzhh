@@ -1,11 +1,12 @@
 
 schema:
   schema_id: tiger
-  name: 虎（纯虎 虎句优化）
+  name: 虎（虎句优化）
   dependencies:
     - melt_eng        # 英文输入，作为次翻译器挂载到拼音方案
+    - charset     
     - common
-    
+    - wanxiang
 switches:
   - name: ascii_mode
     states: [ 中, 英 ]
@@ -30,15 +31,20 @@ switches:
     reset: 1   
   - name: simple
     states: [ 两码句, 原码句 ]
+  - name: yin
+    states: [ 关, 音码 ]
+    reset: 1   
   - name: super_tips
     states: [ off, tips ]
+  - name: tone_display
+    states: [ 关, 句pīn ] 
   - name: full_shape
     states: [ 半角, 全角 ]
     reset: 0   
   - name: traditionalization
     states: [ 简, 繁 ]
   - name: emoji
-    states: [ 💀, 😄 ]
+    states: [ 🙃, 😄 ]
     reset: 0
   - name: udpf_switch
     states: [ 关, U编]
@@ -78,14 +84,13 @@ engine:
     - fallback_segmentor
   translators:
     - table_translator@custom_phrase     # 自定义短语 custom_phrase.txt
-    - table_translator@tiger_sentence
     - predict_translator
     - punct_translator
     - script_translator
     - lua_translator@*shijian            # 时间、日期、星期、农历、节气、时辰等等
     - lua_translator@*unicode            # Unicode
     - lua_translator@*number_translator  # 数字、金额大写
-    - lua_translator@*calculator         # 计算器
+    - lua_translator@*super_calculator   # 计算器
     - table_translator@melt_eng          # 英文输入
     - table_translator@cn_en             # 中英混合词汇
     - table_translator@chengyu           # 简码成语
@@ -95,7 +100,8 @@ engine:
     - script_translator@add_user_dict
     - lua_translator@*force_gc          # 暴力 GC 降低内存
   filters:
-    - lua_filter@*common_filter                      #字符集过滤
+    - lua_filter@*common_filter                     #全局字符集过滤
+   # - lua_filter@*chars_filter                      #单字字符集过滤
     - lua_filter@*cold_word_drop.filter
     - lua_filter@*remove_tiger_filter             # 虎码开关
     - lua_filter@*super_tips_phone*M     #超级提示模块 手机版本filters部分
@@ -109,7 +115,7 @@ engine:
     - lua_filter@*search@radical_pinyin             # 部件拆字辅码放在简繁转换之后
     - simplifier@chaifen #拆分滤镜
     - simplifier@pinyin #拼音滤镜 
-  #  - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
+    - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
     - lua_filter@*unicode_display #Unicode编码显示
     #- simplifier@moqi_chaifen                       #墨奇拆分型辅助码查询，放在超级注释后面
     #- simplifier@zrm_chaifen                        #自然码拆分型辅助码查询，放在超级注释后面
@@ -180,6 +186,29 @@ quick_symbol_text:
 calculator:
   trigger: "V" 
 
+
+translator:
+  dictionary: tiger.extended
+  enable_user_dict: false # 是否开启自动调频
+
+
+user_dict_set:
+  dictionary: wanxiang          # 挂载词库 wanxiang.dict.yaml
+#  prism: double_pinyin          # 多方案共用一个词库时，为避免冲突，需要用 prism 指定一个名字。
+  enable_completion: true  # 启用候选词补全
+#  user_dict: zrm.userdb  # 用户词典的文件名称
+  db_class: tabledb  #开启后就不会产生zrm.userdb这样的文件夹，会直接输出文本zrm.txt同时无法使用同步能力
+  enable_user_dict: true # 是否开启自动调频
+#  disable_user_dict_for_patterns:
+#    - "^[a-z]{1,6}"    #基本的6码3字不调频
+  enable_correction: false #是否开启自动纠错
+  initial_quality: 3       # 初始质量拼音的权重应该比英文大
+  spelling_hints: 50             # 将注释以词典字符串形式完全暴露，通过super_comment.lua完全接管，灵活配置。
+  always_show_comments: true    # Rime 默认在 preedit 等于 comment 时取消显示 comment，这里强制一直显示，供super_comment.lua做判断用。
+  comment_format: {comment}  #将注释以词典字符串形式完全暴露，通过super_comment.lua完全接管，灵活配置。
+  preedit_format:               # preedit_format 影响到输入框的显示和“Shift+回车”上屏的字符
+    
+
 # 次翻译器，英文
 melt_eng:
   dictionary: melt_eng     # 挂载词库 melt_eng.dict.yaml
@@ -227,7 +256,6 @@ recognizer:
     quick_symbol: "^'.*$"  # 快符引导，例如输入'q 后自动上屏快速符号，双击''重复上屏符号，单次输入
     quick_text: "^;.*$"  # 双击;;重复上屏汉字和字母
     
- 
 #从 default 继承快捷键
 key_binder:
   import_preset: default  # 从 default.yaml 继承通用的
@@ -294,10 +322,6 @@ speller:
     - derive|^.+;(\w)(\w),00$|$1$2/| # 1码全码的字，3码全码后加/
     - derive|^.+;(\w)0,00$|$1/| # 1码全码的字，3码全码后加/
    
-
-translator:
-  dictionary: tiger.extended
-  enable_user_dict: false # 是否开启自动调频
 
 __include: octagram   #启用语言模型
 #语言模型
