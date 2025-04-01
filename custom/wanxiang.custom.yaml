@@ -10,7 +10,8 @@ patch:
     - sentence
   schema/dependencies/+: 
     - common  
-  
+  schema/dependencies/+: 
+    - tiger
 
   switches:
     - name: ascii_mode
@@ -62,7 +63,7 @@ patch:
 
   engine/translators:
     - table_translator@custom_phrase     # 自定义短语 custom_phrase.txt
-    - table_translator@tiger_sentence
+    - script_translator@tiger_sentence
     - predict_translator
     - punct_translator
     - script_translator
@@ -70,7 +71,7 @@ patch:
     - lua_translator@*unicode            # Unicode
     - lua_translator@*number_translator  # 数字、金额大写
     - lua_translator@*super_calculator   # 计算器
-    - table_translator@melt_eng          # 英文输入
+    - table_translator@wanxiang_en          # 英文输入
     - table_translator@cn_en             # 中英混合词汇
     - table_translator@chengyu           # 简码成语
     - table_translator@radical_lookup    # 部件拆字反查
@@ -80,9 +81,8 @@ patch:
     - lua_translator@*force_gc          # 暴力 GC 降低内存
   engine/filters:
     - lua_filter@*common_filter                     #全局字符集过滤
-    #- lua_filter@*chars_filter                      #单字字符集过滤
-    - lua_filter@*cold_word_drop.filter
-    #- lua_filter@*assist_sort
+   # - lua_filter@*chars_filter                      #单字字符集过滤
+    - lua_filter@*cold_word_drop.filter               
     - lua_filter@*remove_tiger_filter             # 虎码开关
     - lua_filter@*autocap_filter                    # 英文自动大写
     - reverse_lookup_filter@radical_reverse_lookup  # 部件拆字滤镜，放在pro_comment_format前面，进一步被超级注释处理以获得拼音编码+辅助码的提示
@@ -92,14 +92,14 @@ patch:
     - simplifier@mars                               #火星文
     - simplifier@chinese_english                    #中英翻译
     - lua_filter@*search@radical_pinyin             # 部件拆字辅码放在简繁转换之后
+    - lua_filter@*search@wanxiang_radical           # 部件拆字辅码放在简繁转换之后
+ #   - lua_filter@*super_tips_phone*M               #超级提示模块：表情、简码、翻译、化学式、等等靠你想象，这里负责兼容手机，手机上开启这个
     - simplifier@chaifen #拆分滤镜
-    - simplifier@pinyin #拼音滤镜  
+    - simplifier@pinyin #拼音滤镜 
     - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
     - lua_filter@*unicode_display #Unicode编码显示
-    #- simplifier@moqi_chaifen                       #墨奇拆分型辅助码查询，放在超级注释后面
-    #- simplifier@zrm_chaifen                        #自然码拆分型辅助码查询，放在超级注释后面
-    - uniquifier 
-
+    - uniquifier                                    # 去重
+    
 
   # 主翻译器，拼音
   translator/enable_user_dict: true
@@ -219,7 +219,7 @@ patch:
 
   tiger_sentence:
     tag: tiger_sentence  
-    dictionary: sentence
+    dictionary: tiger
     db_class: stabledb
     enable_user_dict: true
     enable_completion: false
