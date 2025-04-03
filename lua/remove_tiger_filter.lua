@@ -57,8 +57,8 @@ local function contains_alpha(text)
 end
 
 -- 判断是否只包含指定标点符号
-local function contains_only_punctuation(text)
-    return text:match("^[\\\\,.，#&*+=~%s；：？%‰%-%^—～！…→←（）“”%%%[%]]*$") ~= nil or text:match("^[、。《》]*$") ~= nil 
+local function contains_only_punctuation(text)  
+    return text:match("^[\\\\,.，·‘’$〕〔≤<>_≠〖〗『』￥|【】「」#&*+=~%s；：？%‰%-%^—～！…→←（）“”%%%[%]]*$") ~= nil or text:match("^[、。《》]*$") ~= nil 
 end
 
 -- 判断注释是否不包含分号
@@ -72,7 +72,8 @@ function M.func(input, env)
     local input_preedit = context:get_preedit().text
     -- 候选词存储
     local fc_candidates = {}    -- 反查候选词
-    local kf_candidates = {}    -- 包含斜杠的候选词
+    local kfxg_candidates = {}    -- 包含斜杠的候选词
+    local kffh_candidates = {}    -- 包含分号的候选词
     local digit_candidates = {}  -- 包含数字但不包含字母的候选词
     local alnum_candidates = {}  -- 包含字母的候选词
     local punctuation_candidates = {}  -- 只包含指定标点符号的候选词
@@ -94,12 +95,14 @@ function M.func(input, env)
         if env.is_radical_mode then
             table.insert(fc_candidates, cand)
         elseif input_preedit:find("/") then
-            table.insert(kf_candidates, cand)
+            table.insert(kfxg_candidates, cand)
+        elseif input_preedit:find(";") then
+            table.insert(kffh_candidates, cand)
         elseif contains_digit_no_alpha(text) then
             table.insert(digit_candidates, cand)
         elseif contains_alpha(text) then
             table.insert(alnum_candidates, cand)
-        elseif contains_only_punctuation(text) and  contains_no_semicolons(cand.comment) then 
+        elseif contains_only_punctuation(text) and contains_no_semicolons(cand.comment) then 
             table.insert(punctuation_candidates, cand)
         elseif cand.comment == "" then
             table.insert(unique_candidates, cand)
@@ -121,7 +124,12 @@ function M.func(input, env)
     end
     
     -- 包含斜杠的候选词
-    for _, cand in ipairs(kf_candidates) do
+    for _, cand in ipairs(kfxg_candidates) do
+        yield(cand)
+    end
+    
+    -- 包含分号的候选词
+    for _, cand in ipairs(kffh_candidates) do
         yield(cand)
     end
 
@@ -234,12 +242,47 @@ function M.func(input, env)
             end
         end   
     end
-
-    -- 输出特定符号
+    
+    -- 输出符号
+    local zerofh = {} 
+    local onekf = {} 
+    local twokf = {} 
     for _, cand in ipairs(punctuation_candidates) do
+    local cand_length = utf8.len(cand.preedit)
+    local input_preedit = context:get_preedit().text
+    local cletter_count = 0
+    for _ in cand.preedit:gmatch("%a") do 
+        cletter_count = cletter_count + 1
+    end
+    local letter_count = 0
+    for _ in input_preedit:gmatch("%a") do 
+        letter_count = letter_count + 1
+    end
+          if cletter_count == 0 then 
+            table.insert(zerofh, cand)
+          elseif letter_count ~= cand_length then
+            table.insert(useless_candidates, cand)
+          elseif cletter_count == 1 then 
+            table.insert(onekf, cand)
+          elseif cletter_count == 2 then 
+            table.insert(twokf, cand)
+          else
+
+          end
+      end
+      for _, cand in ipairs(zerofh) do
         yield(cand)
+      end
+      for _, cand in ipairs(twokf) do
+        yield(cand)
+      end
+    if not context:get_option("tigress") and context:get_option("tiger") then
+      for _, cand in ipairs(onekf) do
+        yield(cand)
+      end
     end
 
+    
 
     local input_code = env.engine.context.input
     local input_len = utf8.len(input_code)
@@ -336,7 +379,7 @@ function M.func(input, env)
     else  -- **处理 input_len < 3 的情况**
         for _, cand in ipairs(candidates) do yield(cand) end
     end
-
+    
 
     -- 字母候选词
     if context:get_option("chinese_english") then
