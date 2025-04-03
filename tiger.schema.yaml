@@ -66,6 +66,7 @@ engine:
     #- lua_processor@*select_character          # 以词定字，有了辅助码了，想开启可以注释掉
     - lua_processor@*cold_word_drop.processor
     - lua_processor@*quick_symbol_text    #快符引导以及重复上屏
+    - lua_processor@*quick_symbol_text2
    # - lua_processor@*super_tips          #超级提示模块 PC版本（如果要启用PC版本需要注释掉手机版本）：表情、简码、翻译、化学式、等等靠你想象
     - lua_processor@*super_tips_phone*S   #超级提示模块 手机版本processors部分
     - lua_processor@*userdb_sync_delete   #通过输入 /del 触发,用于清理自定义同步目录下txt用户词典里被标记c<0的词条
@@ -150,8 +151,8 @@ predictor:
 
 #快符lua，lua中有预设，26个字母、10个数字，你可以在这里配置替换默认的值，键可以是一个或多个，值可以是任意字符这里不齐全默认配置将生效
 quick_symbol_text:
-  q: "欢迎使用万象拼音"
-  w: "噢我的天哪！"
+  q: "：“"
+  w: "？"
   e: "（"
   r: "）"
   t: "~"
@@ -259,7 +260,8 @@ recognizer:
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
     calculator: "^V.*$"                 #计算器功能引导，，，，
     quick_symbol: "^'.*$"  # 快符引导，例如输入'q 后自动上屏快速符号，双击''重复上屏符号，单次输入
-#    quick_text: "^;.*$"  # 双击;;重复上屏汉字和字母（与;引导的快符自动上屏功能冲突）
+    quick_text: "^'.*$"    # 双击'重复上屏汉字和字母
+    quick_text2: "^`.*$"   # 双击`重复上屏汉字和字母
     tiger_sentence: '^[A-Za-z]{4}[A-Za-z]*'
 #从 default 继承快捷键
 key_binder:
