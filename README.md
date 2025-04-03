@@ -11,7 +11,8 @@
 
 
 混输交流群 809597773
-注：基于万象方案改造，万象方案地址https://github.com/amzxyz/rime_wanxiang_pinyin
+注：基于万象方案改造，本仓库需要与万象方案合并才能使用，可在q群更新完整方案
+万象方案地址https://github.com/amzxyz/rime_wanxiang_pinyin
 相对于万象的改动有:
 1.开关
 2.增加5个滤镜：tiger、拆分、拼音、常用字、u编
