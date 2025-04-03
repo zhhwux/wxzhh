@@ -58,7 +58,7 @@ end
 
 -- 判断是否只包含指定标点符号
 local function contains_only_punctuation(text)  
-    return text:match("^[\\\\,.，·‘’$〕〔≤<>_≠〖〗『』￥|【】「」#&*+=~%s；：？%‰%-%^—～！…→←（）“”%%%[%]]*$") ~= nil or text:match("^[、。《》]*$") ~= nil 
+    return text:match("^[\\\\,.，·'\"‘’$≤<>_≠￥|#&*+=~%s；：？%‰%-%^—～！…→←()（）{}“”%%%[%]]*$") ~= nil or text:match("^[、。〈〉〔〕〖〗『』【】「」《》]*$") ~= nil 
 end
 
 -- 判断注释是否不包含分号
@@ -247,6 +247,7 @@ function M.func(input, env)
     local zerofh = {} 
     local onekf = {} 
     local twokf = {} 
+    local otkf = {} 
     for _, cand in ipairs(punctuation_candidates) do
     local cand_length = utf8.len(cand.preedit)
     local input_preedit = context:get_preedit().text
@@ -267,13 +268,16 @@ function M.func(input, env)
           elseif cletter_count == 2 then 
             table.insert(twokf, cand)
           else
-
+            table.insert(otkf, cand)
           end
       end
       for _, cand in ipairs(zerofh) do
         yield(cand)
       end
       for _, cand in ipairs(twokf) do
+        yield(cand)
+      end
+      for _, cand in ipairs(otkf) do
         yield(cand)
       end
     if not context:get_option("tigress") and context:get_option("tiger") then
@@ -283,7 +287,6 @@ function M.func(input, env)
     end
 
     
-
     local input_code = env.engine.context.input
     local input_len = utf8.len(input_code)
 
@@ -380,7 +383,7 @@ function M.func(input, env)
         for _, cand in ipairs(candidates) do yield(cand) end
     end
     
-
+    
     -- 字母候选词
     if context:get_option("chinese_english") then
        for _, cand in ipairs(alnum_candidates) do
@@ -393,8 +396,6 @@ function M.func(input, env)
         yield(cand)
     end
     
-
-
 end
 
 return M
