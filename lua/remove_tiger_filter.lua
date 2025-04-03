@@ -69,15 +69,17 @@ end
 -- 主逻辑
 function M.func(input, env)
     local context = env.engine.context
-
+    local input_preedit = context:get_preedit().text
     -- 候选词存储
     local fc_candidates = {}    -- 反查候选词
+    local kf_candidates = {}    -- 包含斜杠的候选词
     local digit_candidates = {}  -- 包含数字但不包含字母的候选词
     local alnum_candidates = {}  -- 包含字母的候选词
     local punctuation_candidates = {}  -- 只包含指定标点符号的候选词
     local unique_candidates = {}  -- 没有注释的候选词
     local tiger_sentence = {}  -- 注释不包含分号
     local other_candidates = {}
+
 
     -- 候选词收集
     for cand in input:iter() do
@@ -91,6 +93,8 @@ function M.func(input, env)
         ) or false
         if env.is_radical_mode then
             table.insert(fc_candidates, cand)
+        elseif input_preedit:find("/") then
+            table.insert(kf_candidates, cand)
         elseif contains_digit_no_alpha(text) then
             table.insert(digit_candidates, cand)
         elseif contains_alpha(text) then
@@ -113,6 +117,11 @@ function M.func(input, env)
 
     -- 反查候选词
     for _, cand in ipairs(fc_candidates) do
+        yield(cand)
+    end
+    
+    -- 包含斜杠的候选词
+    for _, cand in ipairs(kf_candidates) do
         yield(cand)
     end
 
@@ -177,7 +186,6 @@ function M.func(input, env)
         local first_group_assigned = false
         for _, cand in ipairs(tiger_sentence) do
             
-        local input_preedit = context:get_preedit().text
         local letter_count = 0
         for _ in input_preedit:gmatch("%a") do 
             letter_count = letter_count + 1
