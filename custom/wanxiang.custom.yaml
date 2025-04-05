@@ -7,8 +7,6 @@
 patch:
 
   schema/dependencies/+: 
-    - sentence
-  schema/dependencies/+: 
     - common  
   schema/dependencies/+: 
     - tiger
@@ -34,7 +32,7 @@ patch:
       states: [ 关, 虎单 ]
       reset: 1   
     - name: simple
-      states: [ 两码句, 原码句 ]
+      states: [ 两码, 原码句 ]
     - name: yin
       states: [ 关, 音码 ]
       reset: 1   
@@ -81,7 +79,6 @@ patch:
     - lua_translator@*force_gc          # 暴力 GC 降低内存
   engine/filters:
     - lua_filter@*common_filter                     #全局字符集过滤
-   # - lua_filter@*chars_filter                      #单字字符集过滤
     - lua_filter@*cold_word_drop.filter               
     - lua_filter@*remove_tiger_filter             # 虎码开关
     - lua_filter@*autocap_filter                    # 英文自动大写
@@ -93,7 +90,6 @@ patch:
     - simplifier@chinese_english                    #中英翻译
     - lua_filter@*search@radical_pinyin             # 部件拆字辅码放在简繁转换之后
     - lua_filter@*search@wanxiang_radical           # 部件拆字辅码放在简繁转换之后
- #   - lua_filter@*super_tips_phone*M               #超级提示模块：表情、简码、翻译、化学式、等等靠你想象，这里负责兼容手机，手机上开启这个
     - simplifier@chaifen #拆分滤镜
     - simplifier@pinyin #拼音滤镜 
     - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
@@ -195,10 +191,6 @@ patch:
     show_in_comment: true 
     comment_format:     
       - "xform/&nbsp;/ /"
-    tags:     
-      - abc
-      - tiger
-      - reverse_lookup
     tips: all #如只想给单字加滤镜，可改为 char
   
   
@@ -211,10 +203,6 @@ patch:
       - 'xform/&nbsp;/ /'
       # - "xform/^/ /"
     tips: char
-    tags:
-      - abc
-      - tiger
-      # - reverse_lookup
     
 
   tiger_sentence:
@@ -228,9 +216,6 @@ patch:
     comment_format:
       - xform/~[A-Za-z]*//
     
-
-#句词单三个功能是可以集成到一个翻译器里的，不过为了探索整句效果，分离出了一个tiger_sentence
-#其它形码用户可以注释掉上面tiger_sentence的词典，然后把下面custom_phrase的user_dict换成你的形码txt
 
   custom_phrase:
     dictionary: ""
