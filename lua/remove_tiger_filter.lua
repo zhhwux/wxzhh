@@ -58,7 +58,7 @@ end
 
 -- 判断是否只包含指定标点符号
 local function contains_only_punctuation(text)  
-    return text:match("^[\\\\,.，·'\"‘’$≤<>_≠￥|#&*+=~%s；：？%‰%-%^—～！…→←()（）{}“”%%%[%]]*$") ~= nil or text:match("^[、。〈〉〔〕〖〗『』【】「」《》]*$") ~= nil 
+    return text:match("^[\\\\,.，·`'\"‘’$≤<>_≠￥|#&*+=~%s；：？%‰%-%^—～！…→←()（）{}“”%%%[%]]*$") ~= nil or text:match("^[、。〈〉〔〕〖〗『』【】「」《》]*$") ~= nil 
 end
 
 -- 判断注释是否不包含分号

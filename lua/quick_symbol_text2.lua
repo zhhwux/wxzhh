@@ -1,18 +1,3 @@
--- 欢迎使用万象拼音方案
--- @amzxyz
--- https://github.com/amzxyz/rime_wanxiang
--- https://github.com/amzxyz/rime_wanxiang_pro
--- 本lua通过定义一个不直接上屏的引导符号搭配26字母实现快速符号输入，并在双击''上屏上一次的符号，双击;;重复上屏上次的汉字和字母
--- 使用方式加入到函数 - lua_processor@*quick_symbol_text 下面
--- 方案文件配置,
--- recognizer/patterns/quick_symbol: "^'.*$"
--- recognizer/patterns/quick_text: "^;.*$"
---你可以在方案文件中如下去针对性的替换符号的设定，或者a-z全部替换
---quick_symbol_text:
-  --q: "wwwwwwwww"
-  --w: "？"
-
-
 
 -- 读取 RIME 配置文件中的符号映射表
 local function load_mapping_from_config(config)
@@ -53,15 +38,15 @@ local function init(env)
         env.mapping[k] = v  -- 仅替换配置中存在的键
     end
     
-    local quick_symbol_pattern = config:get_string("recognizer/patterns/quick_symbol") or "^'.*$"
-    local quick_text_pattern = config:get_string("recognizer/patterns/quick_text2") or "^;.*$"
+    local quick_symbol_pattern = config:get_string("recognizer/patterns/quick_symbol")
+    local quick_text_pattern = config:get_string("recognizer/patterns/quick_text2")
     
-    local quick_symbol = string.sub(quick_symbol_pattern, 2, 2) or "'"
-    local quick_text = string.sub(quick_text_pattern, 2, 2) or ";"
+    local quick_symbol = string.sub(quick_symbol_pattern, 2, 2)
+    local quick_text = string.sub(quick_text_pattern, 2, 2)
     
     env.single_symbol_pattern = "^" .. quick_symbol .. "([a-zA-Z0-9])$"
     env.double_symbol_pattern_symbol = "^" .. quick_symbol .. quick_symbol .. "$"
-    env.double_symbol_pattern_text = "^" .. quick_text .. quick_text .. "$"
+    env.double_symbol_pattern_text = "^" .. quick_text .. "$"
 
     env.engine.context.commit_notifier:connect(function(ctx)
         local commit_text = ctx:get_commit_text()
