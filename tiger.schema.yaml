@@ -1,3 +1,5 @@
+super_comment:                 
+  fuzhu_type: tiger       # 音码候选词辅助码调序和注释显示
 #__include: set_chord_composer  #启用并击处理，不懂得不要开启就是了
 
 schema:
@@ -42,6 +44,8 @@ switches:
     states: [ off, tips ]
   - name: tone_display
     states: [ 关, 句pīn ] 
+  - name: fuzhu_switch
+    states: [ 隐, 辅显 ]
   - name: full_shape
     states: [ 半角, 全角 ]
     reset: 0   
