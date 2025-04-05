@@ -2,7 +2,7 @@
 
 schema:
   schema_id: tiger
-  name: 万象虎（句/词/单/音）
+  name: 万象虎
   author:
     - zhhwux
   dependencies:
@@ -34,7 +34,7 @@ switches:
     states: [ 关, 虎单 ]
     reset: 1   
   - name: simple
-    states: [ 两码句, 原码句 ]
+    states: [ 两码, 原码句 ]
   - name: yin
     states: [ 关, 音码 ]
     reset: 1   
@@ -261,7 +261,7 @@ recognizer:
     calculator: "^V.*$"                 #计算器功能引导，，，，
     quick_symbol: "^'.*$"  # 快符引导，例如输入'q 后自动上屏快速符号，双击''重复上屏符号，单次输入
     quick_text: "^'.*$"    # 双击'重复上屏汉字和字母
-    quick_text2: "^`.*$"   # 双击`重复上屏汉字和字母
+    quick_text2: "^`.*$"   # 单击`重复上屏汉字和字母
     tiger_sentence: '^[A-Za-z]{4}[A-Za-z]*'
 #从 default 继承快捷键
 key_binder:
@@ -439,10 +439,6 @@ chaifen:
   show_in_comment: true 
   comment_format:     
     - "xform/&nbsp;/ /"
-  tags:     
-    - abc
-    - tiger
-    - reverse_lookup
   tips: all #如只想给单字加滤镜，可改为 char
 
 
@@ -455,11 +451,7 @@ pinyin:
     - 'xform/&nbsp;/ /'
     # - "xform/^/ /"
   tips: char
-  tags:
-    - abc
-    - tiger
-    - reverse_lookup
-    
+
 
 custom_phrase:
   dictionary: ""

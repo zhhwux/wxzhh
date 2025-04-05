@@ -31,7 +31,6 @@ schema:
     - wanxiang_en        #英文输入
     - wanxiang_charset   #字符集过滤器
     - common
-    - sentence
     - tiger
 # 开关
 # reset: 默认状态。注释掉后，切换窗口时不会重置到默认状态。
@@ -57,7 +56,7 @@ switches:
   - name: tiger
     states: [ 关, 虎单 ]
   - name: simple
-    states: [ 两码句, 原码句 ]
+    states: [ 两码, 原码句 ]
   - name: yin
     states: [ 关, 音码 ]
     reset: 1   
@@ -1015,10 +1014,6 @@ chaifen:
   show_in_comment: true 
   comment_format:     
     - "xform/&nbsp;/ /"
-  tags:     
-    - abc
-    - tiger
-    - reverse_lookup
   tips: all #如只想给单字加滤镜，可改为 char
 
 
@@ -1031,10 +1026,7 @@ pinyin:
     - 'xform/&nbsp;/ /'
     # - "xform/^/ /"
   tips: char
-  tags:
-    - abc
-    - tiger
-    - reverse_lookup
+
 
 tiger_sentence:
   tag: tiger_sentence  
@@ -1047,8 +1039,6 @@ tiger_sentence:
   comment_format:
     - xform/~[A-Za-z]*//
     
-#句词单三个功能是可以集成到一个翻译器里的，不过为了探索整句效果，分离出了一个tiger_sentence
-#其它形码用户可以注释掉上面tiger_sentence的词典，然后把下面custom_phrase的user_dict换成你的形码txt
 
 custom_phrase:
   dictionary: ""
