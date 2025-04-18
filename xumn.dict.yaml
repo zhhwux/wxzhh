@@ -1,0 +1,19 @@
+#原码整句规则为：最短首选编码，1码字有词打2码，无词后加_
+---
+name: xumn
+version: "2016.06.26"
+sort: by_weight  #字典初始排序，可选original或by_weight
+use_preset_vocabulary: false
+
+
+import_tables:
+  - xuhq
+  
+  - zuci/associational
+  - zuci/base
+  - zuci/correlation
+  - zuci/place
+  - zuci/poetry
+  - zuci/compatible
+  
+...

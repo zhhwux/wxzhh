@@ -9,7 +9,9 @@ config_version: '2024-08-05'
 # 方案列表
 schema_list:
   - schema: tiger
-  - schema: wanxiang          
+  - schema: wanxiang  
+  - schema: mets
+  - schema: xumn
 
 # 菜单
 menu:

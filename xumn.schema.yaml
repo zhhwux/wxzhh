@@ -1,10 +1,11 @@
+#原码整句规则为：最短首选编码，1码字有词打2码，无词后加_
 super_comment:                 
   fuzhu_type: fuzhu       # 音码候选词辅助码调序和注释显示
 #__include: set_chord_composer  #启用并击处理，不懂得不要开启就是了
 
 schema:
-  schema_id: tiger
-  name: 万象虎
+  schema_id: xumn
+  name: 虎码原码整句
   dependencies:
     - wanxiang_en        #英文输入
     - wanxiang_charset   #字符集过滤器
@@ -105,7 +106,8 @@ engine:
     - script_translator@add_user_dict
     - lua_translator@*force_gc          # 暴力 GC 降低内存
   filters:
-    - lua_filter@*common_filter                     #字符集过滤
+    - lua_filter@*common_filter                     #全局字符集过滤
+   # - lua_filter@*chars_filter                      #字符集过滤
     - lua_filter@*cold_word_drop.filter
    # - lua_filter@*assist_sort                       #配合abbrev辅助码派生配合辅助码逻辑四码时候词组优先、匹配四码的单字紧随其后，并且肩负着中文、英文、数字候选之间的排序关系
     - lua_filter@*remove_tiger_filter             # 虎码开关
@@ -190,7 +192,7 @@ calculator:
 
 
 translator:
-  dictionary: tiger
+  dictionary: xumn
   enable_user_dict: false # 是否开启自动调频
   initial_quality: 99
   tag: tiger_sentence
@@ -258,7 +260,7 @@ recognizer:
     calculator: "^V.*$"                 #计算器功能引导，，，，
     quick_symbol: "^'.*$"  
     quick_text: "^`.*$"
-    tiger_sentence: "^[A-Za-z']{4}[A-Za-z']*"
+    tiger_sentence: "^(?=.*_)([A-Za-z'_]+)|^[A-Za-z']{4}[A-Za-z']*"
 #从 default 继承快捷键
 key_binder:
   import_preset: default  # 从 default.yaml 继承通用的
@@ -310,7 +312,7 @@ emoji:
   
 
 speller:
-  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`;/
+  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`_;/
   # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
   initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;
   delimiter: " '"     
@@ -457,14 +459,14 @@ pinyin:
     - 'xform/&nbsp;/ /'
     # - "xform/^/ /"
   tips: char
-  
+
 
 custom_phrase:
   dictionary: ""
   user_dict: custom_phrase/tiger  
   db_class: stabledb
   enable_completion: false # 补全提示
-  enable_sentence: false   
+  enable_sentence: false
   initial_quality: 9999
 
 
