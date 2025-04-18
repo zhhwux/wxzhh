@@ -2,25 +2,11 @@
 local M = {}
 
 -- **获取辅助码**
-function M.run_fuzhu(cand, env, initial_comment)
-    local patterns = {
-        moqi = "[^;]*;([^;]*);",
-        flypy = "[^;]*;[^;]*;([^;]*);",
-        zrm = "[^;]*;[^;]*;[^;]*;([^;]*);",
-        jdh = "[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);",
-        cj = "[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);",
-        tiger = "[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);",
-        wubi = "[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);",
-        hanxin = "[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*)"
-    }
-
-    local pattern = patterns[env.settings.fuzhu_type]
-    if not pattern then return {}, {} end  
-
+function M.run_fuzhu(cand, initial_comment)
     local full_fuzhu_list, first_fuzhu_list = {}, {}
 
     for segment in initial_comment:gmatch("[^%s]+") do
-        local match = segment:match(pattern)
+        local match = segment:match(";(.+)$")
         if match then
             for sub_match in match:gmatch("[^,]+") do
                 table.insert(full_fuzhu_list, sub_match)
@@ -140,17 +126,21 @@ function M.func(input, env)
     
     for _, cand in ipairs(unique_candidates) do
     local input_preedit = context:get_preedit().text
+    local cand_length = utf8.len(cand.preedit)
+    local cletter_count = 0
+    for _ in cand.preedit:gmatch("%a") do 
+        cletter_count = cletter_count + 1
+    end
     local letter_count = 0
     for _ in input_preedit:gmatch("%a") do 
         letter_count = letter_count + 1
     end
-    local cand_length = utf8.len(cand.preedit)
 
         if letter_count == 0 then
             table.insert(yc_candidates, cand)
         elseif cand_length  >= 5 then
             table.insert(tiger_sentence, cand)
-        elseif letter_count ~= cand_length then
+        elseif letter_count ~= cletter_count then
             table.insert(useless_candidates, cand)
         else
             table.insert(tiger_tigress, cand)
@@ -188,12 +178,8 @@ function M.func(input, env)
     -- 拆分虎句组为第一组和第二组
         local one_tiger = {}
         local two_tiger = {}
-        local first_tiger = {}
-        local second_tiger = {}
-        local zj = {}
-        local first_group_assigned = false
         for _, cand in ipairs(tiger_sentence) do
-            
+        
         local letter_count = 0
         for _ in input_preedit:gmatch("%a") do 
             letter_count = letter_count + 1
@@ -202,45 +188,22 @@ function M.func(input, env)
         for _ in cand.preedit:gmatch("%a") do 
             candletter_count = candletter_count + 1
         end
-        
+
             if letter_count ~= candletter_count then
                 table.insert(one_tiger, cand)
             else
                 table.insert(two_tiger, cand)
             end
         end
-        for _, cand in ipairs(two_tiger) do
-            if not first_group_assigned then
-            -- 如果还没有分配第一个候选到第一组，则将当前候选放入第一组
-                table.insert(first_tiger, cand)
-                first_group_assigned = true  -- 标记已经分配了第一个候选   
-            else
-                table.insert(second_tiger, cand)
-            end
-        end   
-        if #second_tiger == 0 then
-            for _, cand in ipairs(first_tiger) do
-                table.insert(zj, cand)
-            end
-        end
-        if context:get_option("simple") then
-            for _, cand in ipairs(first_tiger) do
-                yield(cand)
-            end       
-            for _, cand in ipairs(one_tiger) do
-                yield(cand)
-            end
-            else
-            for _, cand in ipairs(second_tiger) do
-                yield(cand)
-            end
-            for _, cand in ipairs(zj) do
-                yield(cand)
-            end
-            for _, cand in ipairs(one_tiger) do
-                yield(cand)
-            end
-        end   
+      for _, cand in ipairs(two_tiger) do
+        yield(cand)
+      end
+      for _, cand in ipairs(one_tiger) do
+        yield(cand)
+      end
+      for _, cand in ipairs(useless_candidates) do
+        yield(cand)
+      end
     end
     
     -- 输出符号
@@ -248,6 +211,7 @@ function M.func(input, env)
     local onekf = {} 
     local twokf = {} 
     local otkf = {} 
+    local useless_kf = {} 
     for _, cand in ipairs(punctuation_candidates) do
     local cand_length = utf8.len(cand.preedit)
     local input_preedit = context:get_preedit().text
@@ -262,7 +226,7 @@ function M.func(input, env)
           if cletter_count == 0 then 
             table.insert(zerofh, cand)
           elseif letter_count ~= cand_length then
-            table.insert(useless_candidates, cand)
+            table.insert(useless_kf, cand)
           elseif cletter_count == 1 then 
             table.insert(onekf, cand)
           elseif cletter_count == 2 then 
@@ -286,21 +250,19 @@ function M.func(input, env)
       end
     end
 
-    
+
     local input_code = env.engine.context.input
     local input_len = utf8.len(input_code)
 
-    -- **缓存候选项，防止迭代器被消耗**
+    -- **提前获取第一个候选项**
     local first_cand = nil
-    local candidates = {}
-
-    if context:get_option("yin") then
+    local candidates = {}  -- 用于缓存候选词，防止迭代器消耗
+    if not context:get_option("yin") or input_preedit:find("`") then
       for _, cand in ipairs(other_candidates) do
           if not first_cand then first_cand = cand end
           table.insert(candidates, cand)
       end
     end
-
     -- **如果输入码长 > 4，则直接输出默认排序**
     if input_len > 4 then
         for _, cand in ipairs(candidates) do yield(cand) end
@@ -324,7 +286,6 @@ function M.func(input, env)
                 table.insert(other_cands, cand)
             end
         end
-
         local last_char = input_code:sub(-1)
         local last_two = input_code:sub(-2)
         local has_match = false
@@ -339,7 +300,7 @@ function M.func(input, env)
         else
             -- **匹配 `first` 和 `full`**
             for _, cand in ipairs(single_char_cands) do
-                local full, first = M.run_fuzhu(cand, env, cand.comment or "")
+                local full, first = M.run_fuzhu(cand, cand.comment or "")
                 local matched = false
 
                 if input_len == 4 then
@@ -379,10 +340,10 @@ function M.func(input, env)
             for _, v in ipairs(moved) do yield(v) end
             for _, v in ipairs(reordered) do yield(v) end
         end
+
     else  -- **处理 input_len < 3 的情况**
         for _, cand in ipairs(candidates) do yield(cand) end
     end
-    
     
     -- 字母候选词
     if context:get_option("chinese_english") then
@@ -397,6 +358,4 @@ function M.func(input, env)
     end
     
 end
-
 return M
-

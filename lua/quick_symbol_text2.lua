@@ -22,15 +22,9 @@ local default_mapping = {
     ["6"] = "⑥", ["7"] = "⑦", ["8"] = "⑧", ["9"] = "⑨", ["0"] = "⓪"
 }
 
--- 记录上次上屏的内容
-local last_commit_symbol = ""  -- 存储符号的上屏历史
-local last_commit_text = ""    -- 存储文本（汉字/字母）的上屏历史
-
-
 -- 初始化符号输入的状态
 local function init(env)
     local config = env.engine.schema.config
-    
     -- 加载符号映射表，优先使用 RIME 配置，未找到的键使用默认值
     env.mapping = default_mapping
     local custom_mapping = load_mapping_from_config(config)
@@ -38,23 +32,17 @@ local function init(env)
         env.mapping[k] = v  -- 仅替换配置中存在的键
     end
     
-    local quick_symbol_pattern = config:get_string("recognizer/patterns/quick_symbol")
-    local quick_text_pattern = config:get_string("recognizer/patterns/quick_text2")
-    
-    local quick_symbol = string.sub(quick_symbol_pattern, 2, 2)
-    local quick_text = string.sub(quick_text_pattern, 2, 2)
-    
-    env.single_symbol_pattern = "^" .. quick_symbol .. "([a-zA-Z0-9])$"
-    env.double_symbol_pattern_symbol = "^" .. quick_symbol .. quick_symbol .. "$"
+    local quick_text = config:get_string("recognizer/patterns/quick_text, 2, 2") or "`"
     env.double_symbol_pattern_text = "^" .. quick_text .. "$"
-
+    
+    -- 初始化最后提交内容
+    env.last_commit_text = "欢迎使用万象拼音！"
+    
+    -- 连接提交通知器
     env.engine.context.commit_notifier:connect(function(ctx)
         local commit_text = ctx:get_commit_text()
-        
-        if commit_text:match("[%p%s]+") then
-            last_commit_symbol = commit_text
-        else
-            last_commit_text = commit_text
+        if commit_text ~= "" then
+            env.last_commit_text = commit_text  -- 更新最后提交内容到env
         end
     end)
 end
@@ -65,34 +53,12 @@ local function processor(key_event, env)
     local context = engine.context
     local input = context.input
 
+    -- 检查用户是否输入单击符号 `
     if string.match(input, env.double_symbol_pattern_text) then
-        if last_commit_text ~= "" then
-            engine:commit_text(last_commit_text)
-            context:clear()
-            return 1
-        end
+        -- 提交历史记录中的最新文本
+        engine:commit_text(env.last_commit_text)  -- 从env获取最后提交内容
+        context:clear()
+        return 1  -- 终止处理
     end
-
-    if string.match(input, env.double_symbol_pattern_symbol) then
-        if last_commit_symbol ~= "" then
-            engine:commit_text(last_commit_symbol)
-            context:clear()
-            return 1
-        end
-    end
-
-    local match = string.match(input, env.single_symbol_pattern)
-    if match then
-        local symbol = env.mapping[match]
-        if symbol then
-            engine:commit_text(symbol)
-            last_commit_symbol = symbol
-            context:clear()
-            return 1
-        end
-    end
-
-    return 2
 end
-
 return { init = init, func = processor }
