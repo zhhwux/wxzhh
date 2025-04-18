@@ -47,8 +47,10 @@ switches:
     states: [ 。, . ]
   - name: tiger-sentence
     states: [关, 虎句]
+    reset: 0   
   - name: tigress
     states: [ 关, 虎词 ]
+    reset: 0   
   - name: tiger
     states: [ 关, 虎单 ]
     reset: 1
