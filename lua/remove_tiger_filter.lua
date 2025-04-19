@@ -257,7 +257,7 @@ function M.func(input, env)
     -- **提前获取第一个候选项**
     local first_cand = nil
     local candidates = {}  -- 用于缓存候选词，防止迭代器消耗
-    if not context:get_option("yin") or input_preedit:find("`") then
+    if context:get_option("yin") or input_preedit:find("`") then
       for _, cand in ipairs(other_candidates) do
           if not first_cand then first_cand = cand end
           table.insert(candidates, cand)
