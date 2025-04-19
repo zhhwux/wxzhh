@@ -1,5 +1,5 @@
 #如果把custom.yaml放到主文件夹，它会覆盖掉同名schema.yaml对应的配置。
-#如果能掌握patch方法论的内容，可以使用custom.yaml个性化你的配置，并且不影响使用万象的schema.yaml更随更新
+#如果能掌握patch方法论的内容，可以使用custom.yaml个性化你的配置，并且不影响使用schema.yaml更随更新
 
 
 patch:
