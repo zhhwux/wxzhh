@@ -27,6 +27,7 @@ schema:
     - wanxiang_lookup    #辅助码拆分注释、翻译注释、行政区划匹配、车牌、等等注释类显示滤镜，Lua专用：super_comment
     - wanxiang_en        #英文输入
     - wanxiang_charset   #字符集过滤器
+    - core2022
     - tiger
 # 开关
 # reset: 默认状态。注释掉后，切换窗口时不会重置到默认状态。
@@ -53,9 +54,9 @@ switches:
     reset: 0   
   - name: tiger
     states: [ 关, 虎单 ]
-    reset: 1
   - name: yin
-    states: [ 音码, 关 ]
+    states: [ 关, 音码 ]
+    reset: 1
   - name: super_tips
     states: [ off, tips ]
     reset: 1
@@ -209,6 +210,7 @@ quick_symbol_text:
 calculator:
   trigger: "V"
 
+
 # 主翻译器，拼音
 translator:
   dictionary: wanxiang          # 挂载词库 wanxiang.dict.yaml
@@ -225,7 +227,33 @@ translator:
   always_show_comments: true    # Rime 默认在 preedit 等于 comment 时取消显示 comment，这里强制一直显示，供super_comment.lua做判断用。
   comment_format: {comment}  #将注释以词典字符串形式完全暴露，通过super_comment.lua完全接管，灵活配置。
   preedit_format:               # preedit_format 影响到输入框的显示和“Shift+回车”上屏的字符
+  
+user_dict_set:
+  dictionary: wanxiang
+  initial_quality: 0
+  enable_completion: false
+  enable_sentence: false
+  spelling_hints: 100
+  comment_format:
+  enable_user_dict: true
+  user_dict: zc
 
+  # 自定义词典加词('`引导)
+add_user_dict:
+  tag: add_user_dict
+  dictionary: wanxiang
+  initial_quality: -1
+  user_dict: zc
+  enable_charset_filter: false # 是否开启字符集过滤
+  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
+  enable_encoder: true # 是否开启自动造词〔仅 table_translator 有效〕
+  enable_sentence: true #  是否开启自动造句
+  enable_user_dict: true
+  encode_commit_history: false # 是否对已上屛词自动成词〔仅 table_translator 有效〕
+  preedit_format:   
+  comment_format:
+  prefix: "'`"
+  tips: "〔自造词〕"
 
 # 简码词库导入位于jm_dicts得txt文件词库
 chengyu:
@@ -312,7 +340,7 @@ recognizer:
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
     radical_lookup: "^`[A-Za-z]*$"        # 响应部件拆字与笔画的反查，与 radical_lookup/prefix 匹配
-    add_user_dict: "^ach[A-Za-z/`']*$"      #自造词
+    add_user_dict: "^'`[A-Za-z/`']*$"      #自造词
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
@@ -366,6 +394,8 @@ key_binder:
 
 #通过快捷键Control+m显示拆分
     - { when: has_menu, accept: "Control+m", toggle: chaifen }
+#通过快捷键Control+y开关音码
+    - { when: has_menu, accept: "Control+y", toggle: yin }
 #通过快捷键Control+z开关虎单
     - { when: has_menu, accept: "Control+z", toggle: tiger }
 #使用快捷键Control+a开关虎词
@@ -394,7 +424,7 @@ speller:
   # 如果不想让什么标点直接上屏，可以加在 alphabet，或者编辑标点符号为两个及以上的映射
   alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`;/
   # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
-  initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA
+  initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA'
   delimiter: " '"  # 第一位<空格>是拼音之间的分隔符；第二位<'>表示可以手动输入单引号来分割拼音。
   algebra:
     __patch:
@@ -758,34 +788,6 @@ mohuyin:
     - derive/^v([a-z])/z$1/
     - derive/^i([a-z])/c$1/
     - derive/^u([a-z])/s$1/
-
-user_dict_set:
-  dictionary: wanxiang
-  initial_quality: 0
-  enable_completion: false
-  enable_sentence: false
-  spelling_hints: 100
-  comment_format:
-  enable_user_dict: true
-  user_dict: zc
-
-
-  # 自定义词典加词(ach引导)
-add_user_dict:
-  tag: add_user_dict
-  dictionary: wanxiang
-  initial_quality: -1
-  user_dict: zc
-  enable_charset_filter: false # 是否开启字符集过滤
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_encoder: true # 是否开启自动造词〔仅 table_translator 有效〕
-  enable_sentence: true #  是否开启自动造句
-  enable_user_dict: true
-  encode_commit_history: false # 是否对已上屛词自动成词〔仅 table_translator 有效〕
-  preedit_format:   
-  comment_format:
-  prefix: "ach"
-  tips: "〔自造词〕"
 
 
 #语法模型
