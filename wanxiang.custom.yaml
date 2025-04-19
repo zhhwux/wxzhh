@@ -1,0 +1,53 @@
+#如果把custom.yaml放到主文件夹，它会覆盖掉同名schema.yaml对应的配置。
+#如果能掌握patch方法论的内容，可以使用custom.yaml个性化你的配置，并且不影响使用万象的schema.yaml更随更新
+
+
+patch:
+
+
+  switches:
+    - name: ascii_mode
+      states: [ 中, 英 ]
+    - name: chaifen
+      states: [ 拆隐, 拆显 ] 
+    - name: charset_filter
+      states: [ 小, 大字集 ]
+      reset: 0  
+    - name: pinyin  #拼音滤镜
+      reset: 0
+      states: [ 关, 字pīn ]
+    - name: ascii_punct  # 中英标点
+      states: [ 。, . ]
+    - name: tiger-sentence
+      states: [关, 虎句]
+      reset: 0
+    - name: tigress
+      states: [ 关, 虎词 ]
+      reset: 0
+    - name: tiger
+      states: [ 关, 虎单 ]
+      reset: 0
+    - name: yin
+      states: [ 关, 音码 ]
+      reset: 1   
+    - name: super_tips
+      states: [ off, tips ]
+      reset: 1
+    - name: tone_display
+      states: [ 关, 句pīn ] 
+    - name: fuzhu_switch
+      states: [ 关, 辅显 ]
+    - name: full_shape
+      states: [ 半角, 全角 ]
+      reset: 0   
+    - name: traditionalization
+      states: [ 简, 繁 ]
+    - name: emoji
+      states: [ 🙃, 😄 ]
+      reset: 0
+    - name: udpf_switch
+      states: [ 关, U编]
+    - name: chinese_english
+      states: [ 关, 翻译 ]
+    - name: prediction
+      states: [ 关, 预测 ]
