@@ -1,0 +1,8 @@
+
+patch:
+  schema_list:
+    - {schema: tiger}
+    - {schema: wanxiang}
+    - {schema: mets}
+    - {schema: xumn}
+    
