@@ -3352,11 +3352,7 @@ preset_keyboards:
           hilited_key_symbol_color: enter_symbol_color,
           key_symbol_offset_x: 0,
         }
-#下面新增最后一排按钮
-     # - { click: Left, long_click: Up, width: 40, height: 25, key_back_color: keyboard_back_color }
-     # - { click: Control_L, width: 20, height: 25, key_back_color: keyboard_back_color }
-     # - { click: Right, long_click: Down, width: 40, height: 25, key_back_color: keyboard_back_color } 
- 
+
 
 
   18jian:
@@ -3425,10 +3421,7 @@ preset_keyboards:
           key_symbol_offset_x: 0,
         }
 #下面新增最后一排按钮
-      - { click: Left, long_click: Up, width: 40, height: 25, key_back_color: keyboard_back_color }
-      - { click: Control_L, width: 20, height: 25, key_back_color: keyboard_back_color }
-      - { click: Right, long_click: Down, width: 40, height: 25, key_back_color: keyboard_back_color } 
- 
+
   14jian:
     name: 14键
     author: 'amzxyz'
@@ -3490,10 +3483,7 @@ preset_keyboards:
           key_symbol_offset_x: 0,
         }
 #下面新增最后一排按钮
-      - { click: Left, long_click: Up, width: 40, height: 25, key_back_color: keyboard_back_color }
-      - { click: Control_L, width: 20, height: 25, key_back_color: keyboard_back_color }
-      - { click: Right, long_click: Down, width: 40, height: 25, key_back_color: keyboard_back_color } 
- 
+
   9jian:
     name: 9键
     author: 'amzxyz'
@@ -3540,9 +3530,6 @@ preset_keyboards:
           key_symbol_offset_x: 0,
         }
 #下面新增最后一排按钮
-      - { click: Left, long_click: Up, width: 40, height: 25, key_back_color: keyboard_back_color }
-      - { click: Control_L, width: 20, height: 25, key_back_color: keyboard_back_color }
-      - { click: Right, long_click: Down, width: 40, height: 25, key_back_color: keyboard_back_color } 
 
   letter:
     ascii_mode: 1
