@@ -27,6 +27,7 @@ function M.init(env)
         fuzhu_type = config:get_string("super_comment/fuzhu_type") or ""
     }
 end
+
     -- **判断是否为字母或数字和特定符号**
 local function is_alnum(text)
     return text:match("[%w%s.·-_']") ~= nil
@@ -135,7 +136,6 @@ function M.func(input, env)
     for _ in input_preedit:gmatch("%a") do 
         letter_count = letter_count + 1
     end
-
         if letter_count == 0 then
             table.insert(yc_candidates, cand)
         elseif cand_length  >= 5 then
@@ -145,6 +145,11 @@ function M.func(input, env)
         else
             table.insert(tiger_tigress, cand)
         end
+    end
+    
+    -- 预测候选词
+    for _, cand in ipairs(yc_candidates) do
+        yield(cand)
     end
     
     local tigress_candidates = {}    -- 虎词候选词
@@ -157,72 +162,42 @@ function M.func(input, env)
         end
     end
 
-    -- 🐯 虎单开关与虎词开关
-    if context:get_option("tiger") and context:get_option("tigress") then
-        for _, cand in ipairs(tiger_tigress) do
-            yield(cand)
-        end
-    elseif context:get_option("tiger") then
-        for _, cand in ipairs(tiger_candidates) do
-            yield(cand)
-        end
-    elseif context:get_option("tigress") then
-        for _, cand in ipairs(tigress_candidates) do
-            yield(cand)
-        end
-    else
-    end
-
-    -- 🐯 虎句开关
-    if context:get_option("tiger-sentence") then
-    -- 拆分虎句组为第一组和第二组
-        local one_tiger = {}
-        local two_tiger = {}
-        for _, cand in ipairs(tiger_sentence) do
-        
-        local letter_count = 0
-        for _ in input_preedit:gmatch("%a") do 
-            letter_count = letter_count + 1
-        end
-        local candletter_count = 0
-        for _ in cand.preedit:gmatch("%a") do 
-            candletter_count = candletter_count + 1
-        end
-
-            if letter_count ~= candletter_count then
-                table.insert(one_tiger, cand)
-            else
-                table.insert(two_tiger, cand)
-            end
-        end
-      for _, cand in ipairs(two_tiger) do
-        yield(cand)
-      end
-      for _, cand in ipairs(one_tiger) do
-        yield(cand)
-      end
-      for _, cand in ipairs(useless_candidates) do
-        yield(cand)
-      end
+    -- 虎句
+    local before_tigress = {}
+    local now_sentence = {}
+    for _, cand in ipairs(tiger_sentence) do
+         local letter_count = 0
+         for _ in input_preedit:gmatch("%a") do 
+             letter_count = letter_count + 1
+         end
+         local candletter_count = 0
+         for _ in cand.preedit:gmatch("%a") do 
+             candletter_count = candletter_count + 1
+         end
+         if letter_count ~= candletter_count then
+             table.insert(before_tigress, cand)
+         else
+             table.insert(now_sentence, cand)
+         end
     end
     
-    -- 输出符号
+    -- 符号
     local zerofh = {} 
     local onekf = {} 
     local twokf = {} 
     local otkf = {} 
     local useless_kf = {} 
     for _, cand in ipairs(punctuation_candidates) do
-    local cand_length = utf8.len(cand.preedit)
-    local input_preedit = context:get_preedit().text
-    local cletter_count = 0
-    for _ in cand.preedit:gmatch("%a") do 
-        cletter_count = cletter_count + 1
-    end
-    local letter_count = 0
-    for _ in input_preedit:gmatch("%a") do 
-        letter_count = letter_count + 1
-    end
+       local cand_length = utf8.len(cand.preedit)
+       local input_preedit = context:get_preedit().text
+       local cletter_count = 0
+       for _ in cand.preedit:gmatch("%a") do 
+           cletter_count = cletter_count + 1
+       end
+       local letter_count = 0
+       for _ in input_preedit:gmatch("%a") do 
+           letter_count = letter_count + 1
+       end
           if cletter_count == 0 then 
             table.insert(zerofh, cand)
           elseif letter_count ~= cand_length then
@@ -234,39 +209,76 @@ function M.func(input, env)
           else
             table.insert(otkf, cand)
           end
-      end
-      for _, cand in ipairs(zerofh) do
-        yield(cand)
-      end
-      for _, cand in ipairs(twokf) do
-        yield(cand)
-      end
-      for _, cand in ipairs(otkf) do
-        yield(cand)
-      end
-    if not context:get_option("tigress") and context:get_option("tiger") then
-      for _, cand in ipairs(onekf) do
-        yield(cand)
-      end
     end
 
-
+    if context:get_option("ascii_punct") then
+        for _, cand in ipairs(alnum_candidates) do
+            yield(cand)
+        end
+    else
+        
+        -- 🐯 虎单开关与虎词开关
+        if context:get_option("tiger") and context:get_option("tigress") then
+            for _, cand in ipairs(tiger_tigress) do
+                yield(cand)
+            end
+        elseif context:get_option("tiger") then
+            for _, cand in ipairs(tiger_candidates) do
+                yield(cand)
+            end
+            for _, cand in ipairs(onekf) do
+                yield(cand)
+            end
+        elseif context:get_option("tigress") then
+            for _, cand in ipairs(tigress_candidates) do
+                yield(cand)
+            end
+        else
+        end
+    
+        for _, cand in ipairs(zerofh) do
+          yield(cand)
+        end
+        for _, cand in ipairs(twokf) do
+          yield(cand)
+        end
+        for _, cand in ipairs(otkf) do
+          yield(cand)
+        end
+        
+        -- 🐯 虎句开关
+        if context:get_option("tiger-sentence") then
+          for _, cand in ipairs(now_sentence) do
+            yield(cand)
+          end
+          if not context:get_option("chinese_english") and not context:get_option("yin") then
+              for _, cand in ipairs(before_tigress) do
+                 yield(cand)
+              end
+              for _, cand in ipairs(useless_candidates) do
+                 yield(cand)
+              end
+          end
+        end
+    end
+        
     local input_code = env.engine.context.input
     local input_len = utf8.len(input_code)
 
     -- **提前获取第一个候选项**
     local first_cand = nil
     local candidates = {}  -- 用于缓存候选词，防止迭代器消耗
-    if context:get_option("yin") or input_preedit:find("`") then
+    if context:get_option("yin") and not context:get_option("ascii_punct") or input_preedit:find("`") then
       for _, cand in ipairs(other_candidates) do
           if not first_cand then first_cand = cand end
           table.insert(candidates, cand)
       end
     end
     -- **如果输入码长 > 4，则直接输出默认排序**
-    if input_len > 4 then
-        for _, cand in ipairs(candidates) do yield(cand) end
-        return
+    for _, cand in ipairs(candidates) do 
+        if input_len > 4 then
+            yield(cand) 
+        end
     end
     -- **如果第一个候选是字母/数字，则直接返回默认候选**
     if first_cand and is_alnum(first_cand.text) then
@@ -345,16 +357,15 @@ function M.func(input, env)
         for _, cand in ipairs(candidates) do yield(cand) end
     end
     
-    -- 字母候选词
-    if context:get_option("chinese_english") then
-       for _, cand in ipairs(alnum_candidates) do
-          yield(cand)
-       end
-    end
-
-    -- 预测候选词
-    for _, cand in ipairs(yc_candidates) do
-        yield(cand)
+    if context:get_option("yin") then
+        for _, cand in ipairs(alnum_candidates) do
+            yield(cand)
+        end
+    elseif context:get_option("chinese_english") then
+        for _, cand in ipairs(alnum_candidates) do
+            yield(cand)
+        end
+    else
     end
     
 end

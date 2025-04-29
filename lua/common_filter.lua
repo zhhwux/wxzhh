@@ -91,7 +91,6 @@ function charsfilter.IsReverseLookup(env)
    end
    return seg:has_tag("radical_lookup")
       or seg:has_tag("reverse_stroke")
-      or seg:has_tag("add_user_dict")
 end
 
 return charsfilter
