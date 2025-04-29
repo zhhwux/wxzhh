@@ -13,7 +13,7 @@ schema:
     - core2022
 
 switches:
-  - name: ascii_mode
+  - name: ascii_punct  
     states: [ 中, 英 ]
   - name: chaifen
     states: [ 隐, 拆显 ]   
@@ -23,8 +23,6 @@ switches:
   - name: pinyin  #拼音滤镜
     reset: 0
     states: [ 关, 字pīn ]
-  - name: ascii_punct  # 中英标点
-    states: [ 。, . ]
   - name: tiger-sentence
     states: [关, 虎句]
     reset: 1   
@@ -36,6 +34,7 @@ switches:
     reset: 1   
   - name: yin
     states: [ 关, 音码 ]
+    reset: 0
   - name: super_tips
     states: [ off, tips ]
     reset: 1   
@@ -117,8 +116,8 @@ engine:
     - simplifier@chinese_english                    #中英翻译
     - lua_filter@*search@wanxiang_radical           # 部件拆字辅码放在简繁转换之后
     - lua_filter@*super_tips*M                      #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
-    - simplifier@chaifen #拆分滤镜
     - simplifier@pinyin #拼音滤镜 
+    - simplifier@chaifen #拆分滤镜
     - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
     - lua_filter@*unicode_display #Unicode编码显示
     - uniquifier     
@@ -145,44 +144,6 @@ predictor:
 #节日：ojr 或者 /jr
 #问候模板：/day 或者 oday
 
-#快符lua，lua中有预设，26个字母、10个数字，你可以在这里配置替换默认的值，键可以是一个或多个，值可以是任意字符这里不齐全默认配置将生效
-quick_symbol_text:
-  q: "：“"
-  w: "？"
-  e: "（"
-  r: "）"
-  t: "~"
-  y: "·"
-  u: "『"
-  i: "』"
-  o: "〖"
-  p: "〗"
-  a: "！"
-  s: "……"
-  d: "、"
-  f: "“"
-  g: "”"
-  h: "‘"
-  j: "’"
-  k: "【"
-  l: "】"
-  z: "。”"
-  x: "？”"
-  c: "！”"
-  v: "——"
-  b: "%"
-  n: "《"
-  m: "》"
-  "1": "①"
-  "2": "②"
-  "3": "③"
-  "4": "④"
-  "5": "⑤"
-  "6": "⑥"
-  "7": "⑦"
-  "8": "⑧"
-  "9": "⑨"
-  "0": "⓪"
 
 # Lua 配置：计算器触发关键字
 calculator:
@@ -211,7 +172,7 @@ user_dict_set:
   comment_format: {comment}  #将注释以词典字符串形式完全暴露，通过super_comment.lua完全接管，灵活配置。
   preedit_format:               # preedit_format 影响到输入框的显示和“Shift+回车”上屏的字符
   
-  # 自定义词典加词('引导)
+  # 音码前缀('引导)
 add_user_dict:
   tag: add_user_dict
   dictionary: wanxiang
@@ -226,7 +187,7 @@ add_user_dict:
   preedit_format:   
   comment_format:
   prefix: "'"
-  tips: "〔自造词〕"
+  tips: "〔音〕"
     
 # 次翻译器，英文
 wanxiang_en:
@@ -269,11 +230,11 @@ recognizer:
   import_preset: default  # 从 default.yaml 继承通用的
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
-    add_user_dict: "^'[A-Za-z/`']*$"      #自造词
+    add_user_dict: "^'[A-Za-z/`']*$"    # 音码前缀
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
-    calculator: "^V.*$"                 #计算器功能引导，，，，
+    calculator: "^V.*$"                 # 计算器功能引导
     quick_text: "^`.*$"
     tiger_sentence: "^(?=.*_)([A-Za-z'_]+)|^[A-Za-z']{4}[A-Za-z']*"
 #从 default 继承快捷键
@@ -473,9 +434,10 @@ pinyin:
   option_name: pinyin
   show_in_comment: true #作为注解在后面显示
   comment_format:
-    - 'xform/&nbsp;/ /'
-    # - "xform/^/ /"
-  tips: char
+    - "xform/&nbsp;/ /"
+    - "xform/（/ /"
+    - "xform/）/ /"
+  tips: all
 
 
 custom_phrase:

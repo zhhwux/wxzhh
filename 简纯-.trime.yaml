@@ -3785,7 +3785,7 @@ preset_keyboards:
       - conf/num
       - conf/num_height
     keys:
-      - { click: Candidate_switch, __include: styl/off_func }
+      - { click: Theme_settings, __include: styl/off_func }
       - { click: Comment_switch, __include: styl/off_func }
       - { click: Hint_switch, __include: styl/off_func }
       - { click: Back, __include: styl/off_func }
