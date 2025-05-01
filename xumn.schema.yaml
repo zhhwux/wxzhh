@@ -37,7 +37,6 @@ switches:
     reset: 0
   - name: super_tips
     states: [ off, tips ]
-    reset: 1   
   - name: tone_display
     states: [ 关, 句pīn ] 
   - name: fuzhu_switch

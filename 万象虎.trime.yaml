@@ -3270,7 +3270,7 @@ preset_keyboards:
           __include: styl/key,
         }
       - { click: 'k', long_click: '(', __include: styl/key, swipe_down: rightyi, hint: '右移' }
-      - { click: 'l', long_click: ")", __include: styl/key }
+      - { click: 'l', long_click: ")", swipe_down: "_", __include: styl/key }
       # 第 3 行
       - { click: Shift_L, composing: split_word, width: 15 }   
 #      - { click: Shift_L, width: 15 }
