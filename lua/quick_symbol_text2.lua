@@ -32,8 +32,13 @@ local function init(env)
         env.mapping[k] = v  -- 仅替换配置中存在的键
     end
     
-    local quick_text = config:get_string("recognizer/patterns/quick_text, 2, 2") or "`"
-    env.double_symbol_pattern_text = "^" .. quick_text .. "$"
+    if config:get_string("recognizer/patterns/quick_text") then
+        env.double_symbol_pattern_text1 = "^" .. string.sub(config:get_string("recognizer/patterns/quick_text"), 2, 2)  .. "$" 
+    else
+        env.double_symbol_pattern_text1 = "''"
+    end
+    
+    env.double_symbol_pattern_text2 = "''"
     
     -- 初始化最后提交内容
     env.last_commit_text = "欢迎使用万象拼音！"
@@ -54,7 +59,7 @@ local function processor(key_event, env)
     local input = context.input
 
     -- 检查用户是否输入单击符号 `
-    if string.match(input, env.double_symbol_pattern_text) then
+    if string.match(input, env.double_symbol_pattern_text2) or string.match(input, env.double_symbol_pattern_text1) then
         -- 提交历史记录中的最新文本
         engine:commit_text(env.last_commit_text)  -- 从env获取最后提交内容
         context:clear()
