@@ -3782,8 +3782,8 @@ preset_keyboards:
       - conf/num_height
     keys:
       - { click: Theme_settings, __include: styl/off_func }
-      - { click: Comment_switch, __include: styl/off_func }
-      - { click: Hint_switch, __include: styl/off_func }
+      - { click: _Keyboard_clip, __include: styl/off_func }
+      - { click: liquid_keyboard_clipboard, __include: styl/off_func }
       - { click: Back, __include: styl/off_func }
       - { click: Deploy, __include: styl/off_func }
       - { click: Sync, __include: styl/off_func }
@@ -3948,7 +3948,9 @@ preset_keys:
   liquid_keyboard_switch: { label: 更多, send: function, command: liquid_keyboard, option: "更多" }
   liquid_keyboard_exit: {label: 返回, send: function, command: liquid_keyboard, option: "-1"}  #退出liquidkeyboard
   liquid_keyboard_emoji: { label: 🙂, send: function, command: liquid_keyboard, option: "emoji" }
-  liquid_keyboard_clipboard: { label: 剪贴, send: function, command: liquid_keyboard, option: "剪贴" }
+  liquid_keyboard_clipboard: { label: 剪贴·同, send: function, command: liquid_keyboard, option: "剪贴" }
+  clip_board: {label: 中文剪切板, send: Control+Shift+v}
+  _Keyboard_clip: {label: 剪贴·中, functional: false, send: Eisu_toggle, select: _clip_board}
   # rime组合键
   F4: { label: 方案选单, send: F4 }
   BackToPreviousSyllable: { label: 删音节, send: Control+BackSpace }

@@ -8,7 +8,7 @@ schema:
   name: 虎码原码整句
   dependencies:
     - wanxiang_en        #英文输入
-    - wanxiang_charset   #字符集过滤器
+    - wanxiang_radical  
     - wanxiang
     - core2022
 
@@ -80,14 +80,11 @@ engine:
     - ascii_segmentor
     - matcher
     - abc_segmentor
-    - affix_segmentor@radical_lookup  # 部件拆字自定义 tag
-    - affix_segmentor@reverse_stroke  #笔画反查
     - affix_segmentor@add_user_dict
     - punct_segmentor
     - fallback_segmentor
   translators:
     - table_translator@custom_phrase     
-    - script_translator@tiger_sentence
     - predict_translator
     - punct_translator
     - script_translator
@@ -96,9 +93,6 @@ engine:
     - lua_translator@*number_translator  # 数字、金额大写
     - lua_translator@*super_calculator   # 计算器
     - table_translator@wanxiang_en       # 英文输入
-    - table_translator@chengyu           # 简码成语
-    - table_translator@radical_lookup    # 部件拆字反查
-    - table_translator@reverse_stroke    #笔画反查
     - script_translator@user_dict_set
     - script_translator@add_user_dict
     - table_translator@cn_en             # 中英混合词汇
@@ -281,6 +275,17 @@ key_binder:
 #通过快捷键Control+s开关虎句
     - { when: has_menu, accept: "Control+s", toggle: tiger-sentence }
 
+editor:
+   bindings:
+     space: confirm                        # 空格键：上屏候选项
+     Return: commit_raw_input              # 回车键：上屏原始输入
+     Control+Return: commit_script_text    # Ctrl+回车键：上屏变换后输入（经过 preedit转换的）
+     Control+Shift+Return: commit_comment  # Ctrl+Shift+回车键：上屏 comment
+     BackSpace: revert                     # 退格键：向前删除（撤消上次输入）
+     Delete: delete                        # Delete 键：向后删除
+     Control+BackSpace: back_syllable      # Ctrl+退格键：删除一个音节
+     Control+Delete: delete_candidate      # Ctrl+Delete键：删除或降权候选项
+     Escape: cancel                        # Esc 键：取消输入
 
 # Emoji
 emoji:
