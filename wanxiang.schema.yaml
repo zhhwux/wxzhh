@@ -38,7 +38,7 @@ schema:
 # states: 方案选单显示的名称。可以注释掉，仍可以通过快捷键切换。
 # abbrev: 默认的缩写取 states 的第一个字符，abbrev 可自定义一个字符
 switches:
-  - name: ascii_punct  
+  - name: english_word  
     states: [ 中, 英 ]
   - name: chaifen
     states: [ 隐, 拆显 ]   
@@ -67,6 +67,8 @@ switches:
     states: [ 关, 句pīn ] 
   - name: fuzhu_switch
     states: [ 隐, 辅显 ]
+  - name: ascii_punct  # 中英标点
+    states: [ ¥, $ ]
   - name: full_shape
     states: [ 半角, 全角 ]
     reset: 0   
@@ -86,70 +88,69 @@ switches:
 # 输入引擎
 engine:
   processors:
-    - predictor                                 #联想处理器
-    - chord_composer                            #并击处理器
-    #- lua_processor@*select_character          # 以词定字，有了辅助码了，想开启可以注释掉
-    - lua_processor@*tiger_sequence*P
-    - lua_processor@*tone_fallback              #声调辅助回退，当你输入声调数字错误继续输入正确的而不用回退删除
-    - lua_processor@*quick_symbol_text2
-    - lua_processor@*super_tips*S         #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
-    - lua_processor@*limit_repeated       #用于限制最大候选长度以及最大重复输入声母编码长度，避免性能异常
-    - lua_processor@*userdb_sync_delete   #通过输入 /del 触发,用于清理自定义同步目录下txt用户词典里被标记c<0的词条
-    - ascii_composer
-    - recognizer
-    - key_binder
-    - lua_processor@*key_binder # 绑定按键扩展能力
-    - speller
-    - punctuator
-    - selector
-    - navigator
-    - express_editor
+    - predictor                            #联想处理器，与predictor顶层配置配合
+    - chord_composer                       #并击处理器，与置顶参数：是否启用并击，选项配合使用
+    #- lua_processor@*select_character     #以词定字，默认左中括号上屏一个词的前一个字，右中括号上屏一个词的后一个字
+    - lua_processor@*tiger_sequence*P     #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+0 移除位移
+    - lua_processor@*tone_fallback         #声调辅助回退，当你输入声调数字错误时，继续输入正确的而不用回退删除
+    - lua_processor@*quick_symbol_text2   #快符引导以及重复上屏，配合quick_symbol_text顶层配置清单定义扩展按键
+    - lua_processor@*super_tips*S          #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
+    - lua_processor@*limit_repeated        #用于限制最大候选长度以及最大重复输入声母编码长度，避免性能异常
+    - lua_processor@*userdb_sync_delete    #危险操作：通过输入 /del 触发,用于清理自定义同步目录下txt用户词典里被标记c<0的词条，操作步骤：必须先同步、再执行/del、再去部署刷新状态、再去同步回收词典，完成动作。
+    - ascii_composer                       #处理英文模式及中英文切换
+    - recognizer                           #与 matcher 搭配，处理符合特定规则的输入码，如网址、反查等 tags
+    - key_binder                           #在特定条件下将按键绑定到其他按键，如重定义逗号、句号为候选翻页、开关快捷键等
+    - lua_processor@*key_binder            #绑定按键扩展能力，支持正则扩展将按键生效情景更加细化
+    - speller                              #拼写处理器，接受字符按键，编辑输入
+    - punctuator                           #符号处理器，将单个字符按键直接映射为标点符号或文字
+    - selector                             #选字处理器，处理数字选字键〔可以换成别的哦〕、上、下候选定位、换页
+    - navigator                            #处理输入栏内的光标移动
+    - express_editor                       #编辑器，处理空格、回车上屏、回退键
   segmentors:
-    - ascii_segmentor
-    - matcher
-    - abc_segmentor
-    - affix_segmentor@radical_lookup  # 部件拆字自定义 tag
-    - affix_segmentor@reverse_stroke  #笔画反查
-    - affix_segmentor@add_user_dict
-    - punct_segmentor
-    - fallback_segmentor
+    - ascii_segmentor                      #标识英文段落〔譬如在英文模式下〕字母直接上屛
+    - matcher                              #配合 recognizer 标识符合特定规则的段落，如网址、反查等，加上特定 tag
+    - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
+    - affix_segmentor@radical_lookup       #部件拆字自定义 tag
+    - affix_segmentor@reverse_stroke       #笔画反查自定义 tag
+    - affix_segmentor@add_user_dict        #自造词加词 tag
+    - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
+    - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
   translators:
-    - table_translator@custom_phrase     
-    - script_translator@tiger_sentence
-    - predict_translator
-    - punct_translator
-    - script_translator
-    - lua_translator@*shijian            # 时间、日期、星期、农历、节气、时辰等等
-    - lua_translator@*unicode            # Unicode
-    - lua_translator@*number_translator  # 数字、金额大写
-    - lua_translator@*super_calculator   # 计算器
-    - table_translator@custom_phrase     # 自定义短语 custom_phrase.txt
-    - table_translator@wanxiang_en       # 英文输入
-    - table_translator@cn_en             # 中英混合词汇
-    - table_translator@chengyu           # 简码成语
-    - table_translator@radical_lookup    # 部件拆字反查
-    - table_translator@reverse_stroke    #笔画反查
-    - script_translator@user_dict_set
-    - script_translator@add_user_dict
-    - lua_translator@*force_gc          # 暴力 GC 降低内存
+    - table_translator@custom_phrase      #虎单/虎词翻译器
+    - script_translator@tiger_sentence    #虎句翻译器
+    - predict_translator                   #预测候选的生成器
+    - punct_translator                     #配合 punct_segmentor 转换标点符号
+    - script_translator                    #脚本翻译器，用于拼音、粤拼等基于音节表的输入方案
+    - lua_translator@*shijian              #农历、日期、节气、节日、时间、周、问候模板等等，触发清单看下文
+    - lua_translator@*unicode              #通过输入大写U引导，并输入Unicode编码获得汉字输出
+    - lua_translator@*number_translator    #数字、金额大写，通过输入大写R1234获得候选输出
+    - lua_translator@*super_calculator     #超级计算器，Lua内查看高级用法
+    - table_translator@wanxiang_en         #挂接英文输入，参与中英混输
+    - table_translator@cn_en               #中英混合词汇表导入
+    - table_translator@chengyu             #简码成语词汇表导入
+    - table_translator@radical_lookup      #挂接部件拆字反查
+    - table_translator@reverse_stroke      #挂接笔画反查
+    - script_translator@user_dict_set      #自造词之使用词汇入口
+    - script_translator@add_user_dict      #自造词之制造词汇入口
+    - lua_translator@*force_gc             #暴力 GC 降低内存
   filters:
-    - lua_filter@*common_filter                     # 字符集过滤
-    - lua_filter@*remove_tiger_filter               # 虎码开关
-    - lua_filter@*tiger_sequence*F                  # 手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+0 移除位移 
-    - lua_filter@*autocap_filter                    # 英文自动大写
-    - reverse_lookup_filter@radical_reverse_lookup  # 部件拆字滤镜，放在super_comment前面，进一步被超级注释处理以获得拼音编码+辅助码的提示
+    - lua_filter@*common_filter                    #字符集过滤
+    - lua_filter@*remove_tiger_filter              #虎码开关滤镜
+    - lua_filter@*tiger_sequence*F                 #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+0 移除位移 
+    - lua_filter@*autocap_filter                    #英文自动大写
+    - reverse_lookup_filter@radical_reverse_lookup  #部件拆字滤镜，放在super_comment前面，进一步被超级注释处理以获得拼音编码+辅助码的提示
     - lua_filter@*super_preedit                     #输入码显示全拼并带上音调
-    - simplifier@emoji                              # Emoji
-    - simplifier@s2t                                # 简繁切换
-    - simplifier@s2tw
-    - simplifier@s2hk
+    - simplifier@emoji                              #Emoji
+    - simplifier@s2t                                #简繁切换通繁
+    - simplifier@s2tw                               #简繁切换台繁
+    - simplifier@s2hk                               #简繁切换港繁
     - simplifier@chinese_english                    #中英翻译
-    - lua_filter@*search@wanxiang_radical           # 部件拆字辅码放在简繁转换之后
+    - lua_filter@*search@wanxiang_radical           #部件拆字辅码放在简繁转换之后
     - lua_filter@*super_tips*M                      #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
-    - simplifier@pinyin #拼音滤镜 
-    - simplifier@chaifen #拆分滤镜
+    - simplifier@pinyin                            #拼音滤镜 
+    - simplifier@chaifen                           #拆分滤镜
     - lua_filter@*super_comment                     #超级注释模块，支持错词提示、辅助码显示，部件组字读音注释，支持个性化配置和关闭相应的功能，详情搜索super_comment进行详细配置
-    - lua_filter@*unicode_display #Unicode编码显示
+    - lua_filter@*unicode_display                  #Unicode编码显示
     - uniquifier                                    # 去重
 
 predictor:
@@ -293,13 +294,12 @@ recognizer:
   import_preset: default  # 从 default.yaml 继承通用的
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
-    radical_lookup: "^`[A-Za-z]*$"        # 响应部件拆字与笔画的反查，与 radical_lookup/prefix 匹配
+    radical_lookup: "^`[A-Za-z]*$"      # 响应部件拆字与笔画的反查，与 radical_lookup/prefix 匹配
     add_user_dict: "^'[A-Za-z/`']*$"    # 自造词
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
-    calculator: "^V.*$"                 #计算器功能引导，，，，
-    quick_text: "^`.*$"
+    calculator: "^V.*$"                 # 计算器功能引导
     tiger_sentence: '^[A-Za-z]{4}[A-Za-z]*'
     
 # 标点符号
@@ -348,6 +348,8 @@ key_binder:
 #通过按下/发送/+1节约一个按键，不冲突的时候可以开启
     #- { match: "[a-z]{1,4}", accept: "/",  send_sequence: "/1" }
 
+#通过快捷键Control+p开关英文单词
+    - { when: has_menu, accept: "Control+p", toggle: english_word }
 #通过快捷键Control+m显示拆分
     - { when: has_menu, accept: "Control+m", toggle: chaifen }
 #通过快捷键Control+y开关音码

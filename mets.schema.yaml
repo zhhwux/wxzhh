@@ -13,7 +13,7 @@ schema:
     - core2022
 
 switches:
-  - name: ascii_punct  
+  - name: english_word  
     states: [ 中, 英 ]
   - name: chaifen
     states: [ 隐, 拆显 ]   
@@ -41,6 +41,8 @@ switches:
     states: [ 关, 句pīn ] 
   - name: fuzhu_switch
     states: [ 隐, 辅显 ]
+  - name: ascii_punct  # 中英标点
+    states: [ ¥, $ ]
   - name: full_shape
     states: [ 半角, 全角 ]
     reset: 0   
@@ -265,7 +267,9 @@ key_binder:
     - { when: composing, accept: Control+7, send_sequence: '{Home}{Shift+Right}{Shift+Right}{Shift+Right}{Shift+Right}{Shift+Right}{Shift+Right}{Shift+Right}' }
 #通过按下/发送/+1节约一个按键，不冲突的时候可以开启
     #- { match: "[a-z]{1,4}", accept: "/",  send_sequence: "/1" }
-    
+
+#通过快捷键Control+p开关英文单词
+    - { when: has_menu, accept: "Control+p", toggle: english_word }    
 #通过快捷键Control+m显示拆分
     - { when: has_menu, accept: "Control+m", toggle: chaifen }
 #通过快捷键Control+y开关音码

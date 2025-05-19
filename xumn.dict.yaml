@@ -9,11 +9,11 @@ use_preset_vocabulary: false
 import_tables:
   - xuhq
   
-  - zuci/associational
-  - zuci/base
-  - zuci/correlation
-  - zuci/place
-  - zuci/poetry
-  - zuci/compatible
-  
+  - zuci/base            #基础词库，2-3字词汇
+  - zuci/correlation     #关联词库，4字词汇，多为不同词频的2字语句连接起来起到合理组句的能力
+  - zuci/suggestion_one  #联想词库，5字以上词汇，多用于输入前半段第二候选可以出来整段
+  - zuci/suggestion_two  #联想词库，5字以上词汇，多用于输入前半段第二候选可以出来整段
+  - zuci/compatible      #兼容词库，是基础词库的扩充，收录了多场景多种读音的词组
+  - zuci/poetry          #诗词
+  - zuci/place           #地名
 ...
