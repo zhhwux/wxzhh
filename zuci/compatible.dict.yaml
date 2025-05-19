@@ -4,15 +4,18 @@
 #兼容词库，对于多字词汇两种读音的场景，手动维护到本表以及一些其他的杂项
 ---
 name: compatible
-version: "2025-05-11 08:39"
+version: "LTS"
 sort: by_weight
 columns:
   - text
   - weight
 ...
+公差	480
+好高	491
+好强	485
 攒个	391
 攒个	391
-背着	bēi;av zhe;gq
+背着	545
 外传	460
 长点儿	293
 长点儿	293
