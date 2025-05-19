@@ -4,7 +4,7 @@
 #------行政区划------
 ---
 name: place
-version: "2025-05-11 08:39"
+version: "LTS"
 sort: by_weight
 columns:
   - text
