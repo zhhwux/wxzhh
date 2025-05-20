@@ -112,11 +112,11 @@ engine:
     - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
     - affix_segmentor@radical_lookup       #部件拆字自定义 tag
     - affix_segmentor@reverse_stroke       #笔画反查自定义 tag
-    - affix_segmentor@add_user_dict        #自造词加词 tag
+    - affix_segmentor@add_user_dict        #音码自造词加词 tag
     - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
     - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
   translators:
-    - table_translator@custom_phrase      #虎单/虎词翻译器
+    - table_translator@custom_phrase      #虎单/虎词/快符翻译器
     - script_translator@tiger_sentence    #虎句翻译器
     - predict_translator                   #预测候选的生成器
     - punct_translator                     #配合 punct_segmentor 转换标点符号
@@ -130,8 +130,8 @@ engine:
     - table_translator@chengyu             #简码成语词汇表导入
     - table_translator@radical_lookup      #挂接部件拆字反查
     - table_translator@reverse_stroke      #挂接笔画反查
-    - script_translator@user_dict_set      #自造词之使用词汇入口
-    - script_translator@add_user_dict      #自造词之制造词汇入口
+    - script_translator@user_dict_set      #音码自造词之使用词汇入口
+    - script_translator@add_user_dict      #音码自造词之制造词汇入口
     - lua_translator@*force_gc             #暴力 GC 降低内存
   filters:
     - lua_filter@*common_filter                    #字符集过滤
