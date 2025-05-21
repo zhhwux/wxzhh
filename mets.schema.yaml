@@ -152,7 +152,8 @@ calculator:
 translator:
   dictionary: mets
   enable_user_dict: false # 是否开启自动调频
-  initial_quality: 9999
+  enable_completion: true # 提前显示尚未输入完整码的字
+  initial_quality: 99
   tag: tiger_sentence
 
 user_dict_set:
@@ -246,7 +247,8 @@ recognizer:
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
     calculator: "^V.*$"                 # 计算器功能引导
     quick_text: "^`.*$"
-    tiger_sentence: "^[A-Za-z']{4}[A-Za-z']*"
+    tiger_sentence: "^(?=[a-z]%*)([A-Za-z'*]+)"
+
 #从 default 继承快捷键
 key_binder:
   import_preset: default  # 从 default.yaml 继承通用的
@@ -315,7 +317,7 @@ emoji:
   
 
 speller:
-  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`;/
+  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`;*/
   # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
   initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;
   delimiter: " '"     
@@ -340,7 +342,11 @@ speller:
     - derive|^.+;(\w)(\w),(\w)0$|$1$2$3/| # 3码全码的字，3码全码后加/
     - derive|^.+;(\w)(\w),00$|$1$2/| # 1码全码的字，3码全码后加/
     - derive|^.+;(\w)0,00$|$1/| # 1码全码的字，3码全码后加/
-   
+
+    - derive/[qwertyuiopasdfghjklzxcvbnm](.*)/*$1/
+    - derive/(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1*$2/
+    - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/
+    - derive/(.*)[qwertyuiopasdfghjklzxcvbnm]/$1*/
 
 __include: octagram   #启用语言模型
 #语言模型
@@ -448,8 +454,6 @@ chaifen:
   opencc_config: hu_cf.json
   option_name: chaifen
   show_in_comment: true 
-  comment_format:     
-    - "xform/&nbsp;/ /"
   tips: all #如只想给单字加滤镜，可改为 char
 
 
@@ -471,7 +475,7 @@ custom_phrase:
   db_class: stabledb
   enable_completion: false # 补全提示
   enable_sentence: false
-  initial_quality: 99
+  initial_quality: 9999
 
 
 punctuator:

@@ -300,7 +300,7 @@ recognizer:
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
     calculator: "^V.*$"                 # 计算器功能引导
-    tiger_sentence: '^[A-Za-z]{4}[A-Za-z]*'
+    tiger_sentence: "^(?=[a-z]%*)([A-Za-z'*]+)"
     
 # 标点符号
 # punctuator 下面有三个子项：
@@ -379,7 +379,7 @@ speller:
   auto_select: true
   auto_select_pattern: ^;\w+ #自动上屏规则  对 [;] 引导的编码实行候选唯一自动上屏
   # 如果不想让什么标点直接上屏，可以加在 alphabet，或者编辑标点符号为两个及以上的映射
-  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;/
+  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;*/
   # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
   initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;
   delimiter: " '"  # 第一位<空格>是拼音之间的分隔符；第二位<'>表示可以手动输入单引号来分割拼音。
@@ -388,6 +388,7 @@ speller:
       - set_shuru_schema     #拼音转双拼码
       - set_fuzhu_schema     #辅助码部分
 #      - mohuyin             #模糊音选择性开启
+      - tongpei
 ###############################以下是拼写运算规则中全拼转双拼码以及形码的过程，按照不同的方案规则划分段落###########################
 全拼: 
   __append: 
@@ -1348,6 +1349,13 @@ mohuyin:
     - derive/^i([a-z])/c$1/
     - derive/^u([a-z])/s$1/
 
+tongpei:
+  __append:
+    - derive/[qwertyuiopasdfghjklzxcvbnm](.*)/*$1/
+    - derive/(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1*$2/
+    - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/
+    - derive/(.*)[qwertyuiopasdfghjklzxcvbnm]/$1*/
+
 user_dict_set:
   dictionary: wanxiang
   initial_quality: 0
@@ -1483,8 +1491,6 @@ chaifen:
   opencc_config: hu_cf.json
   option_name: chaifen
   show_in_comment: true 
-  comment_format:     
-    - "xform/&nbsp;/ /"
   tips: all #如只想给单字加滤镜，可改为 char
 
 
