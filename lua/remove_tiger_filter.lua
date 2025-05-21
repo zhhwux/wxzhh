@@ -125,6 +125,7 @@ function M.func(input, env)
     local other_tigress = {}
     local useless_candidates = {}
     local yc_candidates = {}    -- 预测候选词
+    local short_tiger = {}
     
     for _, cand in ipairs(unique_candidates) do
     local input_preedit = context:get_preedit().text
@@ -143,6 +144,8 @@ function M.func(input, env)
             table.insert(tiger_sentence, cand)
         elseif letter_count ~= cletter_count then
             table.insert(useless_candidates, cand)
+        elseif cand.type == "phrase" and not cand.preedit:find("[_*]") then
+            table.insert(short_tiger, cand)
         else
             table.insert(tiger_tigress, cand)
         end
@@ -212,7 +215,7 @@ function M.func(input, env)
           end
     end
 
-    if context:get_option("ascii_punct") then
+    if context:get_option("english_word") then
         for _, cand in ipairs(alnum_candidates) do
             yield(cand)
         end
@@ -269,7 +272,7 @@ function M.func(input, env)
     -- **提前获取第一个候选项**
     local first_cand = nil
     local candidates = {}  -- 用于缓存候选词，防止迭代器消耗
-    if context:get_option("yin") and not context:get_option("ascii_punct") or input_preedit:find("`") then
+    if context:get_option("yin") and not context:get_option("english_word") or input_preedit:find("`") then
       for _, cand in ipairs(other_candidates) do
           if not first_cand then first_cand = cand end
           table.insert(candidates, cand)
