@@ -134,15 +134,15 @@ function M.func(input, env)
     for _ in cand.preedit:gmatch("%a") do 
         cletter_count = cletter_count + 1
     end
-    local letter_count = 0
-    for _ in input_preedit:gmatch("%a") do 
-        letter_count = letter_count + 1
+    local iletter_count = 0
+    for _ in env.engine.context.input:gmatch("%a") do 
+        iletter_count = iletter_count + 1
     end
-        if letter_count == 0 then
+        if iletter_count == 0 then
             table.insert(yc_candidates, cand)
         elseif cand_length  >= 5 then
             table.insert(tiger_sentence, cand)
-        elseif letter_count ~= cletter_count then
+        elseif iletter_count ~= cletter_count then
             table.insert(useless_candidates, cand)
         elseif cand.type == "phrase" and not cand.preedit:find("[_*]") then
             table.insert(short_tiger, cand)
@@ -170,15 +170,15 @@ function M.func(input, env)
     local before_tigress = {}
     local now_sentence = {}
     for _, cand in ipairs(tiger_sentence) do
-         local letter_count = 0
+         local inletter_count = 0
          for _ in input_preedit:gmatch("%a") do 
-             letter_count = letter_count + 1
+             inletter_count = inletter_count + 1
          end
-         local candletter_count = 0
+         local caletter_count = 0
          for _ in cand.preedit:gmatch("%a") do 
-             candletter_count = candletter_count + 1
+             caletter_count = caletter_count + 1
          end
-         if letter_count ~= candletter_count then
+         if inletter_count ~= caletter_count then
              table.insert(before_tigress, cand)
          else
              table.insert(now_sentence, cand)
@@ -194,21 +194,21 @@ function M.func(input, env)
     for _, cand in ipairs(punctuation_candidates) do
        local cand_length = utf8.len(cand.preedit)
        local input_preedit = context:get_preedit().text
-       local cletter_count = 0
+       local canletter_count = 0
        for _ in cand.preedit:gmatch("%a") do 
-           cletter_count = cletter_count + 1
+           canletter_count = canletter_count + 1
        end
-       local letter_count = 0
-       for _ in input_preedit:gmatch("%a") do 
-           letter_count = letter_count + 1
+       local inpletter_count = 0
+       for _ in env.engine.context.input:gmatch("%a") do 
+           inpletter_count = inpletter_count + 1
        end
-          if cletter_count == 0 then 
+          if canletter_count == 0 then 
             table.insert(zerofh, cand)
-          elseif letter_count ~= cand_length then
+          elseif inpletter_count ~= cand_length then
             table.insert(useless_kf, cand)
-          elseif cletter_count == 1 then 
+          elseif canletter_count == 1 then 
             table.insert(onekf, cand)
-          elseif cletter_count == 2 then 
+          elseif canletter_count == 2 then 
             table.insert(twokf, cand)
           else
             table.insert(otkf, cand)
