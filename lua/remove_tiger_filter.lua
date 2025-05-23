@@ -251,7 +251,7 @@ function M.func(input, env)
         end
         
         -- 🐯 虎句开关
-        if context:get_option("tiger-sentence") then
+        if context:get_option("tiger-sentence") and not input_preedit:find("`") then
           for _, cand in ipairs(now_sentence) do
             yield(cand)
           end
