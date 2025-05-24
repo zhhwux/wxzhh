@@ -112,7 +112,6 @@ engine:
     - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
     - affix_segmentor@radical_lookup       #部件拆字自定义 tag
     - affix_segmentor@reverse_stroke       #笔画反查自定义 tag
-    - affix_segmentor@tiger_add_user      #虎码自造词加词 tag
     - affix_segmentor@add_user_dict        #音码自造词加词 tag
     - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
     - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
@@ -131,8 +130,6 @@ engine:
     - table_translator@chengyu             #简码成语词汇表导入
     - table_translator@radical_lookup      #挂接部件拆字反查
     - table_translator@reverse_stroke      #挂接笔画反查
-    - script_translator@tiger_user_dict   #虎码自造词之使用词汇入口
-    - script_translator@tiger_add_user    #虎码自造词之制造词汇入口
     - script_translator@user_dict_set      #音码自造词之使用词汇入口
     - script_translator@add_user_dict      #音码自造词之制造词汇入口
     - lua_translator@*force_gc             #暴力 GC 降低内存
@@ -270,7 +267,7 @@ radical_lookup:
   tag: radical_lookup
   dictionary: wanxiang_radical
   enable_user_dict: false
-  prefix: "``"  # 反查前缀（反查时前缀会消失影响打英文所以设定为两个字母，或可改成一个非字母符号），与 recognizer/patterns/radical_lookup 匹配
+  prefix: "`"  # 反查前缀（反查时前缀会消失影响打英文所以设定为两个字母，或可改成一个非字母符号），与 recognizer/patterns/radical_lookup 匹配
   tips: "〔反查：部件|笔画〕"
   extra_tags:
     - reverse_stroke
@@ -297,9 +294,8 @@ recognizer:
   import_preset: default  # 从 default.yaml 继承通用的
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
-    radical_lookup: "^``[A-Za-z]*$"      # 响应部件拆字与笔画的反查，与 radical_lookup/prefix 匹配
-    tiger_add_user: "^`[A-Za-z/`']*$"   # 虎码自造词
-    add_user_dict: "^'[A-Za-z/`']*$"    # 自造词
+    radical_lookup: "^`[A-Za-z]*$"      # 响应部件拆字与笔画的反查，与 radical_lookup/prefix 匹配
+    add_user_dict: "^'[A-Za-z/`']*$"    # 音码自造词
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
@@ -1508,31 +1504,6 @@ pinyin:
     - "xform/）/ /"
   tips: all
 
-tiger_user_dict:
-  dictionary: tiger
-  initial_quality: 0
-  enable_completion: false
-  enable_sentence: false
-  comment_format:
-  enable_user_dict: true
-  user_dict: ti
-  db_class: tabledb 
-
-tiger_add_user:
-  tag: tiger_add_user
-  dictionary: tiger
-  initial_quality: -1
-  user_dict: ti
-  enable_charset_filter: false # 是否开启字符集过滤
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_encoder: true # 是否开启自动造词〔仅 table_translator 有效〕
-  enable_sentence: true #  是否开启自动造句
-  enable_user_dict: true
-  encode_commit_history: false # 是否对已上屛词自动成词〔仅 table_translator 有效〕
-  preedit_format:   
-  comment_format:
-  prefix: "`"
-  tips: "〔自造词〕"
 
 tiger_sentence:
   dictionary: tiger

@@ -159,7 +159,7 @@ translator:
   initial_quality: 99
 
 tiger_user_dict:
-  dictionary: tiger
+  dictionary: mets
   initial_quality: 0
   enable_completion: false
   enable_sentence: false
@@ -170,7 +170,7 @@ tiger_user_dict:
 
 tiger_add_user:
   tag: tiger_add_user
-  dictionary: tiger
+  dictionary: mets
   initial_quality: -1
   user_dict: ti
   enable_charset_filter: false # 是否开启字符集过滤
