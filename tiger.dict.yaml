@@ -20,4 +20,5 @@ import_tables:
   - zuci/compatible      #兼容词库，是基础词库的扩充，收录了多场景多种读音的词组
   - zuci/poetry          #诗词
   - zuci/place           #地名
+  #- zuci/people          #人名
 ...

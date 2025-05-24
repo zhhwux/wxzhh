@@ -84,6 +84,7 @@ engine:
     - ascii_segmentor                      #标识英文段落〔譬如在英文模式下〕字母直接上屛
     - matcher                              #配合 recognizer 标识符合特定规则的段落，如网址、反查等，加上特定 tag
     - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
+    - affix_segmentor@tiger_add_user      #虎码自造词加词 tag
     - affix_segmentor@add_user_dict        #音码自造词加词 tag
     - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
     - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
@@ -98,8 +99,10 @@ engine:
     - lua_translator@*super_calculator     #超级计算器，Lua内查看高级用法
     - table_translator@wanxiang_en         #挂接英文输入，参与中英混输
     - table_translator@cn_en               #中英混合词汇表导入
-    - script_translator@user_dict_set      #自造词之使用词汇入口
-    - script_translator@add_user_dict      #自造词之制造词汇入口
+    - script_translator@tiger_user_dict   #虎码自造词之使用词汇入口
+    - script_translator@tiger_add_user    #虎码自造词之制造词汇入口
+    - script_translator@user_dict_set      #音码自造词之使用词汇入口
+    - script_translator@add_user_dict      #音码自造词之制造词汇入口
     - lua_translator@*force_gc             #暴力 GC 降低内存
   filters:
     - lua_filter@*common_filter                    #字符集过滤
@@ -154,8 +157,33 @@ translator:
   enable_user_dict: false # 是否开启自动调频
   enable_completion: true # 提前显示尚未输入完整码的字
   initial_quality: 99
-  tag: tiger_sentence
 
+tiger_user_dict:
+  dictionary: tiger
+  initial_quality: 0
+  enable_completion: false
+  enable_sentence: false
+  comment_format:
+  enable_user_dict: true
+  user_dict: ti
+  db_class: tabledb 
+
+tiger_add_user:
+  tag: tiger_add_user
+  dictionary: tiger
+  initial_quality: -1
+  user_dict: ti
+  enable_charset_filter: false # 是否开启字符集过滤
+  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
+  enable_encoder: true # 是否开启自动造词〔仅 table_translator 有效〕
+  enable_sentence: true #  是否开启自动造句
+  enable_user_dict: true
+  encode_commit_history: false # 是否对已上屛词自动成词〔仅 table_translator 有效〕
+  preedit_format:   
+  comment_format:
+  prefix: "`"
+  tips: "〔自造词〕"
+  
 user_dict_set:
   dictionary: wanxiang          # 挂载词库 wanxiang.dict.yaml
   user_dict: zc
@@ -241,13 +269,13 @@ recognizer:
   import_preset: default  # 从 default.yaml 继承通用的
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
+    tiger_add_user: "^`[A-Za-z/`']*$"   # 虎码自造词
     add_user_dict: "^'[A-Za-z/`']*$"    # 音码前缀
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     gregorian_to_lunar: "^N[0-9]{1,8}"  # 脚本将自动获取第 2 个字符 N 作为触发前缀，响应 lua_translator@lunar，公历转农历，输入 N20240115 得到「二〇二三年腊月初五」
     calculator: "^V.*$"                 # 计算器功能引导
-    quick_text: "^`.*$"
-    tiger_sentence: "^(?=[a-z]%*)([A-Za-z'*]+)"
+    #quick_text: "^`.*$"
 
 #从 default 继承快捷键
 key_binder:
