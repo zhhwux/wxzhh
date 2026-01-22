@@ -1,3 +1,4 @@
+
 local charsfilter = {}
 
 function charsfilter.init(env)
@@ -13,7 +14,7 @@ function charsfilter.fini(env)
 end
 
 function charsfilter.func(t_input, env)
-   local extended = env.engine.context:get_option("charset_filter")
+   local extended = env.engine.context:get_option("charset")
 
    if extended or env.charset == nil or charsfilter.IsReverseLookup(env) then
       for cand in t_input:iter() do
@@ -21,12 +22,17 @@ function charsfilter.func(t_input, env)
       end
    else
       for cand in t_input:iter() do
-         if charsfilter.IsSingleChineseCharacter(cand.text) and charsfilter.InCharset(env, cand.text) then
+         -- 修改开始：添加对 user_table 类型的特殊处理
+         if cand.type == "user_table" then
+            -- 如果是 user_table 类型的候选，直接放行
+            yield(cand)
+         elseif charsfilter.IsSingleChineseCharacter(cand.text) and charsfilter.InCharset(env, cand.text) then
             yield(cand)
          elseif not charsfilter.IsSingleChineseCharacter(cand.text) then
             -- 对于非汉字字符，直接放行
             yield(cand)
          end
+         -- 修改结束
       end
    end
 end

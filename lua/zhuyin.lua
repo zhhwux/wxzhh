@@ -39,16 +39,17 @@ function ZY.run(cand, env)
     -- 从全局变量获取原始注释
     local raw_comment = _RIME_RAW_CAND_COMMENT and _RIME_RAW_CAND_COMMENT[cand.text] or nil
     
-    -- 1. 拼音候选词：原生注释处理（优先）
-    if raw_comment and raw_comment ~= "" then
+    -- 1. 注释有分号：原生注释处理（优先，清理分号后内容）
+    if raw_comment and raw_comment:find(";") then
         return process_existing_comment(raw_comment)
     
-    -- 2. 形码等自定义词典：无注释单字（显示所有发音）
+    -- 2. 注释没有分号（含无注释）：单字显示所有发音
     elseif char_count == 1 then
         local raw = dict:lookup(cand.text)
+        -- 无注释时 raw 为 nil，process_annotation 会返回 nil，最终不显示注释
         return process_annotation(raw, true)
     
-    -- 3. 形码等自定义词典：无注释多字（每字取首音）
+    -- 3. 注释没有分号（含无注释）：多字每字取首音
     elseif char_count > 1 then
         local parts, has_annotation = {}, false
         for char in cand.text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
@@ -57,6 +58,7 @@ function ZY.run(cand, env)
             table.insert(parts, part)
             if part ~= char then has_annotation = true end
         end
+        -- 无注释时 has_annotation 为 false，返回 nil 不显示注释
         return has_annotation and table.concat(parts, " ") or nil
     end
     return nil

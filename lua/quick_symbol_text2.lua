@@ -10,17 +10,26 @@ local history_count = 0
 
 local function init(env)
     local config = env.engine.schema.config
-    -- 静态配置读取
+    
+    -- 静态配置读取（核心逻辑：根据quick_text状态控制触发键列表）
     local quick_text_pattern = config:get_string("recognizer/patterns/quick_text")
-    env.double_symbol_trigger = quick_text_pattern 
-                               and string.sub(quick_text_pattern, 2, 2) 
-                               or "'"
+    env.default_trigger = "''" -- 内置默认触发键（固定为''）
+    env.trigger_list = {} -- 最终生效的自定义触发键列表（触发最新历史）
+
+    -- 按quick_text配置状态分类处理
+    if quick_text_pattern == nil then
+        -- 情况1：quick_text不存在 → 仅添加默认''
+        table.insert(env.trigger_list, env.default_trigger)
+    elseif quick_text_pattern ~= "" then
+        -- 情况2：quick_text存在且非空 → 同时添加默认'' + 配置项
+        table.insert(env.trigger_list, env.default_trigger)
+        table.insert(env.trigger_list, quick_text_pattern)
+    end
+    -- 情况3：quick_text存在且为空 → 不添加任何自定义触发键（禁用''）
+
+    env.double_more_trigger = "'`" -- 保留原固定双符号触发（触发全部历史，不改动）
     
-    -- 预计算双符号触发字符串
-    env.double_trigger_string = env.double_symbol_trigger .. env.double_symbol_trigger
-    env.double_more_trigger = "'`"
-    
-    -- iOS设备：使用文件持久化保存
+    -- iOS设备：使用文件持久化保存（完全保留原逻辑）
     if is_ios_device() then
         -- 初始化历史记录
         env.commit_history = {}
@@ -91,7 +100,7 @@ local function init(env)
             env.save_history()
         end)
     else
-        -- 非iOS设备: 使用模块闭包变量
+        -- 非iOS设备: 使用模块闭包变量（完全保留原逻辑）
         -- 直接创建填充好的循环缓冲区
         if #commit_history == 0 then
             for i = 1, 100 do 
@@ -117,11 +126,11 @@ local function init(env)
         end)
     end
     
-    -- 更新通知器（iOS和非iOS共用）
+    -- 更新通知器（iOS和非iOS共用，整合所有触发逻辑）
     env.update_notifier = env.engine.context.update_notifier:connect(function(ctx)
         local input = ctx.input
         
-        -- 新增：处理清除历史记录命令
+        -- 处理清除历史记录命令（完全保留原逻辑）
         if input == "/spql" then
             -- 清除所有历史记录
             for i = 1, 100 do
@@ -141,21 +150,8 @@ local function init(env)
             return
         end
         
-        -- 原逻辑：处理长度为2的输入
-        if #input ~= 2 then return end
-        
-        -- 1. 最新记录
-        if input == env.double_trigger_string then
-            -- 使用模运算定位最新记录
-            local last_index = (env.history_index - 2) % 100 + 1
-            if env.commit_history[last_index] then
-                env.engine:commit_text(env.commit_history[last_index])
-                ctx:clear()
-            end
-        
-        -- 2. 历史记录
-        elseif input == env.double_more_trigger and env.history_count > 0 then
-            -- 避免中间table创建
+        -- 原'`触发逻辑（优先处理，始终生效，触发全部历史）
+        if #input == 2 and input == env.double_more_trigger and env.history_count > 0 then
             local output = {}
             local start_idx = env.history_index - env.history_count
             if start_idx < 1 then start_idx = start_idx + 100 end
@@ -169,12 +165,28 @@ local function init(env)
             
             env.engine:commit_text(table.concat(output))
             ctx:clear()
+            return
         end
+        
+        -- 自定义触发键逻辑（触发最新历史，按trigger_list匹配）
+        local matched = false
+        for _, trigger in ipairs(env.trigger_list) do
+            if #input == #trigger and input == trigger then -- 匹配长度+内容
+                local last_index = (env.history_index - 2) % 100 + 1
+                if env.commit_history[last_index] then
+                    env.engine:commit_text(env.commit_history[last_index])
+                    ctx:clear()
+                    matched = true
+                    break
+                end
+            end
+        end
+        if matched then return end -- 匹配成功则退出
     end)
 end
 
 local function fini(env)
-    -- iOS设备：保存历史记录
+    -- iOS设备：保存历史记录（完全保留原逻辑）
     if is_ios_device() and env.save_history then
         env.save_history()
     end
@@ -190,9 +202,23 @@ local function fini(env)
     -- 非iOS设备：保留历史记录在闭包中（下次初始化时仍可用）
 end
 
--- 处理器
+-- 处理器（适配所有触发键长度，避免报错）
 local function processor(key_event, env)
-    return #env.engine.context.input == 2
+    local input_len = #env.engine.context.input
+    -- 1. 优先适配'`触发（长度2），始终激活
+    if input_len == 2 then
+        return true
+    end
+    -- 2. 适配自定义触发键列表（非空时，匹配任意触发键长度即激活）
+    if #env.trigger_list > 0 then
+        for _, trigger in ipairs(env.trigger_list) do
+            if input_len == #trigger then
+                return true
+            end
+        end
+    end
+    -- 3. 无匹配时不激活
+    return false
 end
 
 return { init = init, fini = fini, func = processor }

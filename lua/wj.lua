@@ -1,7 +1,7 @@
 --8.5 进阶版
 local T = {}
 
-T.prefix = "Z"
+T.prefix = "/wj"
 local regex_enabled = true  -- 默认启用正则模式
 local regex_api = {  -- 保留开关接口，供未来扩展
     enable = function() regex_enabled = true end,
@@ -152,8 +152,8 @@ end
 
 -- 文件名模糊搜索（增强版）
 local function fuzzy_file_search(input, seg, env)
-    -- 匹配 Z关键词 格式
-    local total_pattern = input:match("^Z(.*)$")
+    -- 匹配 /wj关键词 格式
+    local total_pattern = input:match("^/wj(.*)$")
     if not total_pattern then return false end
     
     local files = get_file_cache(env)
@@ -237,8 +237,8 @@ end
 
 -- 处理文件/文件夹创建和删除请求
 local function handleFileSystemRequest(input, seg, env)
-    -- 匹配删除文件命令（中间阶段）：Zdel"关键词"或Zdel"关键词数字"
-    local del_partial_pattern = "^Zdel\"(.-)\"?$"
+    -- 匹配删除文件命令（中间阶段）：/wjdel"关键词"或/wjdel"关键词数字"
+    local del_partial_pattern = "^/wjdel\"(.-)\"?$"
     local del_path_part = input:match(del_partial_pattern)
     
     if del_path_part then
@@ -294,7 +294,7 @@ local function handleFileSystemRequest(input, seg, env)
         if #results == 0 then
             yield(Candidate(input, seg.start, seg._end, "未找到匹配文件: "..search_term, ""))
             return true
-        elseif input:match("^Zdel\".+\"$") then
+        elseif input:match("^/wjdel\".+\"$") then
             -- 完整命令（已输入第二个"），执行删除
             local target_file = results[1]
             local user_dir = rime_api.get_user_data_dir()
@@ -318,10 +318,10 @@ local function handleFileSystemRequest(input, seg, env)
     end
 
     -- 匹配创建文件命令
-    local create_partial_pattern = "^Znew\"(.-)\"?$"
+    local create_partial_pattern = "^/wjnew\"(.-)\"?$"
     local create_path_part = input:match(create_partial_pattern)
     
-    if create_path_part and not input:match("^Znew\".+\"$") then
+    if create_path_part and not input:match("^/wjnew\".+\"$") then
         local has_slash = create_path_part:find("/") ~= nil
         local pre_slash, post_slash = create_path_part:match("^(.-)/(.*)$")
         pre_slash = pre_slash or create_path_part
@@ -379,9 +379,9 @@ local function handleFileSystemRequest(input, seg, env)
     end
 
     -- 匹配完整创建命令
-    local create_pattern = "^Znew\"(.*)\"$"
+    local create_pattern = "^/wjnew\"(.*)\"$"
     local create_path = input:match(create_pattern)
-    local delete_pattern = "^Zdel\"(.*)\"$"
+    local delete_pattern = "^/wjdel\"(.*)\"$"
     local delete_path = input:match(delete_pattern)
     
     if create_path then
@@ -492,11 +492,11 @@ end
 -- 处理文件内容替换请求
 local function handleReplaceRequest(input, seg, env)
     -- 统一为整体替换模式，支持所有文件
-    local overwrite_pattern = "^Z(.-)@//(.*)/$"
+    local overwrite_pattern = "^/wj(.-)@//(.*)/$"
     local file_path, new_content = input:match(overwrite_pattern)
     
     -- 处理整体替换输入中模式
-    local overwrite_input_pattern = "^Z(.-)@//(.*)$"
+    local overwrite_input_pattern = "^/wj(.-)@//(.*)$"
     if not file_path then
         file_path, new_content = input:match(overwrite_input_pattern)
     end
@@ -610,16 +610,16 @@ local function handleReplaceRequest(input, seg, env)
         return true
     end
     
-    -- 完整替换格式 Z文件@关键词/被替换内容/替换内容/
-    local replace_pattern = "^Z(.-)@([^/]+)/([^/]+)/([^/]*)/$"
+    -- 完整替换格式 /wj文件@关键词/被替换内容/替换内容/
+    local replace_pattern = "^/wj(.-)@([^/]+)/([^/]+)/([^/]*)/$"
     local file_path, keyword, old_str, new_str = input:match(replace_pattern)
     
     -- 部分替换格式（输入中）
-    local partial_pattern1 = "^Z(.-)@([^/]+)/([^/]*)$"   -- Z文件@关键词/被替换内容 (输入了第一个/)
-    local partial_pattern2 = "^Z(.-)@([^/]+)/([^/]+)/([^/]*)$"  -- Z文件@关键词/被替换内容/替换内容 (输入了第二个/)
+    local partial_pattern1 = "^/wj(.-)@([^/]+)/([^/]*)$"   -- /wj文件@关键词/被替换内容 (输入了第一个/)
+    local partial_pattern2 = "^/wj(.-)@([^/]+)/([^/]+)/([^/]*)$"  -- /wj文件@关键词/被替换内容/替换内容 (输入了第二个/)
     
     -- 匹配空内容替换的特殊模式（结尾双斜杠）
-    local empty_replace_pattern = "^Z(.-)@([^/]+)/([^/]+)//$"
+    local empty_replace_pattern = "^/wj(.-)@([^/]+)/([^/]+)//$"
     if not (file_path and keyword and old_str and new_str) then
         file_path, keyword, old_str = input:match(empty_replace_pattern)
         if file_path then
@@ -736,7 +736,7 @@ local function handleReplaceRequest(input, seg, env)
     local line_number = matched_line_info.index
     
     -- 完整替换处理
-    if input:match("^Z[^@]*@[^/]+/[^/]+/[^/]*/$") then
+    if input:match("^/wj[^@]*@[^/]+/[^/]+/[^/]*/$") then
         -- 处理转义字符
         if new_str then
             new_str = unescape_string(new_str)
@@ -837,17 +837,17 @@ local function handleFileRequest(input, seg, env)
         return true
     end
     
-    -- 匹配内容查询格式 Z文件@查询内容
-    local query_pattern = "^Z(.-)@([^/]+)/?$"
+    -- 匹配内容查询格式 /wj文件@查询内容
+    local query_pattern = "^/wj(.-)@([^/]+)/?$"
     local file_path, query = input:match(query_pattern)
 
-    -- 匹配合并模式 Z文件@/$
-    local merge_pattern = "^Z(.-)@/$"
+    -- 匹配合并模式 /wj文件@/$
+    local merge_pattern = "^/wj(.-)@/$"
     local merge_file_path = input:match(merge_pattern)
 
-    -- 匹配普通文件读取格式 Z文件@
+    -- 匹配普通文件读取格式 /wj文件@
     if not file_path and not merge_file_path then
-        file_path = input:match("^Z(.-)@$")
+        file_path = input:match("^/wj(.-)@$")
         query = nil
     end
 
@@ -994,22 +994,22 @@ end
 
 -- 处理文件复制/移动请求（优化版：支持数字选重和新目录创建）
 local function handleFileCopyMove(input, seg, env)
-    -- 基础命令提示（刚输入Z&或Z+&时）
-    if input == "Z&" or input == "Z+&" then
-        yield(Candidate(input, seg.start, seg._end, "Z+&原文件&目标路径& 复制文件", "格式：Z+&源&目标&"))
-        yield(Candidate(input, seg.start, seg._end, "Z&原文件&目标路径& 移动文件", "格式：Z&源&目标&"))
+    -- 基础命令提示（刚输入/wj&或/wj+&时）
+    if input == "/wj&" or input == "/wj+&" then
+        yield(Candidate(input, seg.start, seg._end, "/wj+&原文件&目标路径& 复制文件", "格式：/wj+&源&目标&"))
+        yield(Candidate(input, seg.start, seg._end, "/wj&原文件&目标路径& 移动文件", "格式：/wj&源&目标&"))
         return true
     end
     
-    -- 阶段1：仅输入Z+&或Z&，等待输入源文件
-    if input:match("^Z[%+]?&$") then
-        yield(Candidate(input, seg.start, seg._end, "请输入源文件关键词", "例如：Z&note&doc/&"))
+    -- 阶段1：仅输入/wj+&或/wj&，等待输入源文件
+    if input:match("^/wj[%+]?&$") then
+        yield(Candidate(input, seg.start, seg._end, "请输入源文件关键词", "例如：/wj&note&doc/&"))
         return true
     end
     
-    -- 阶段3：完整命令 Z+&原文件&目标路径& 或 Z&原文件&目标路径&
-    local stage3_pattern = "^Z[%+]?&(.-)&(.-)&$"
-    local is_move = input:sub(1,2) == "Z&"  -- 判断是否为移动而非复制
+    -- 阶段3：完整命令 /wj+&原文件&目标路径& 或 /wj&原文件&目标路径&
+    local stage3_pattern = "^/wj[%+]?&(.-)&(.-)&$"
+    local is_move = input:sub(1,2) == "/wj&"  -- 判断是否为移动而非复制
     local original_path, target_path = input:match(stage3_pattern)
     
     if original_path and target_path then
@@ -1173,7 +1173,7 @@ local function handleFileCopyMove(input, seg, env)
     end
     
     -- 阶段2：已输入源文件&，等待输入目标路径
-    local stage2_pattern = "^Z[%+]?&(.-)&(.-)$"
+    local stage2_pattern = "^/wj[%+]?&(.-)&(.-)$"
     local original, target_prefix = input:match(stage2_pattern)
     if original and target_prefix then
         -- 获取目录缓存并生成候选
@@ -1237,7 +1237,7 @@ local function handleFileCopyMove(input, seg, env)
     end
     
     -- 阶段1.5：源文件输入阶段（第一个&后）
-    local src_only_pattern = "^Z[%+]?&(.-)$"
+    local src_only_pattern = "^/wj[%+]?&(.-)$"
     local src_only = input:match(src_only_pattern)
     if src_only then
         -- 源文件阶段：使用标准模糊检索逻辑
@@ -1306,7 +1306,7 @@ end
 
 local T = {}
 
-T.prefix = "Z"
+T.prefix = "/wj"
 local regex_enabled = true
 local regex_api = {
     enable = function() regex_enabled = true end,
@@ -1498,7 +1498,7 @@ end
 
 -- 处理文件分组操作（新功能）
 local function handleGroupOperation(input, seg, env)
-    local group_pattern = "^Z_@(.-)&$"
+    local group_pattern = "^/wj_@(.-)&$"
     local file_path = input:match(group_pattern)
     if not file_path then
         return false
@@ -1572,10 +1572,10 @@ end
 
 -- 处理集合操作（取重、合并、去重）
 local function handleSetOperations(input, seg, env)
-    local filter_pattern = "^Z_@(.-)@(.-)@$"
-    local merge_pattern = "^Z%+@(.-)@(.-)@$"
-    local deduplicate_pattern = "^Z%-@(.-)@(.-)@$"
-    local group_pattern = "^Z_@(.-)&$"
+    local filter_pattern = "^/wj_@(.-)@(.-)@$"
+    local merge_pattern = "^/wj%+@(.-)@(.-)@$"
+    local deduplicate_pattern = "^/wj%-@(.-)@(.-)@$"
+    local group_pattern = "^/wj_@(.-)&$"
     
     local file_path = input:match(group_pattern)
     if file_path then
@@ -1593,7 +1593,7 @@ local function handleSetOperations(input, seg, env)
         op_type = "deduplicate"
         file1_path, file2_path = input:match(deduplicate_pattern)
     else
-        if input:match("^Z_@") then
+        if input:match("^/wj_@") then
             local parts = input:sub(4):split("@")
             if #parts == 0 then
                 yield(Candidate(input, seg.start, seg._end, "请输入第一个文件名关键词", "然后输入@分隔符"))
@@ -1605,7 +1605,7 @@ local function handleSetOperations(input, seg, env)
                 show_file_candidates_custom(input, seg, env, parts[2], false)
                 return true
             end
-        elseif input:match("^Z%+@") then
+        elseif input:match("^/wj%+@") then
             local parts = input:sub(4):split("@")
             if #parts == 0 then
                 yield(Candidate(input, seg.start, seg._end, "请输入第一个文件名关键词", "然后输入@分隔符"))
@@ -1617,7 +1617,7 @@ local function handleSetOperations(input, seg, env)
                 show_file_candidates_custom(input, seg, env, parts[2], false)
                 return true
             end
-        elseif input:match("^Z%-@") then
+        elseif input:match("^/wj%-@") then
             local parts = input:sub(4):split("@")
             if #parts == 0 then
                 yield(Candidate(input, seg.start, seg._end, "请输入第一个文件名关键词", "然后输入@分隔符"))
