@@ -1,0 +1,157 @@
+patch:
+  speller/algebra:
+    __patch:
+      #- 模糊音                                  # 这里启用后，本文件末尾可配置具体条目
+      - wanxiang_algebra:/pro/小鹤双拼             # 可选输入方案名称：自然码, 自然龙, 小鹤双拼, 搜狗双拼, 微软双拼, 智能ABC, 紫光双拼, 国标双拼，龙三
+      - wanxiang_algebra:/pro/直接辅助            #辅助码升级为：直接辅助和间接辅助两种类型，都是句中任意，不同点在于直接辅助是nire=你  而间接则需要/引导  ni/re=你 ，在这个基础上直接辅助支持拼音后任意位置数字声调参与，间接辅助声调在/引导前参与
+      #- 自然码提权                               #本文件末尾，有自然码和小鹤的可以用
+##########################以上格式受指令初始化控制，最好保持格式不变，如果发生变更请不要使用指令修改相关数据#####################################
+    
+  switches:
+    - name: english_word   #中英单词
+      states: [ 中, 英 ]
+    - name: chaifen        #拆分滤镜
+      states: [ 隐, 拆 ]   
+    - name: pinyin         #拼音滤镜
+      states: [ 字, pīn ]
+    - name: charset #常用字滤镜
+      states: [ 常, 全 ]
+    - name: sentence
+      states: [ 关, 虎句 ]
+      reset: 0
+    - name: word
+      states: [ 关, 虎词 ]
+      reset: 0
+    - name: char
+      states: [ 关, 虎单 ]
+      reset: 0
+    - name: yin
+      states: [ 关, 音码 ]
+      reset: 1
+    - name: super_tips
+      states: [ off, tips ]
+    - name: tone_display
+      states: [ 关, 句pīn ] 
+    - options: [ comment_off, fuzhu_hint]  #拼音辅助码滤镜
+      states: [ 注关, 辅开]
+    - name: chaifen_switch               #开启后在候选的注释里面实时显示辅助码的拆分提醒优先级高于普通辅助提醒，不开启则采用系统配置，快捷键配套ctrl+c,影响的是comment_format，归属：super_comment.lua
+      states: [ 拆分关, 拆分开 ]
+    - name: ascii_punct    #中英标点
+      states: [ ¥, $ ]
+    - name: full_shape
+      states: [ 半角, 全角 ]
+    - options: [ s2s, s2t, s2hk, s2tw ]
+      states: [ 简体, 通繁, 港繁, 臺繁 ]
+    - name: emoji
+      states: [ 🙃, 😄 ]
+    - name: udpf_switch
+      states: [ 关, U编]
+    - name: chinese_english
+      states: [ 关, 翻译 ]
+    - name: charset_filter
+      states: [ 大, 小 ]
+      reset: 0
+  
+  # 输入引擎
+
+  engine/processors/@before0: lua_processor@*quick_symbol_text2  #重复上屏
+  engine/translators/@before0: table_translator@char_word       #虎单/虎词/快符翻译器
+  engine/translators/@before1: script_translator@tiger_sentence #虎句翻译器
+  engine/translators/+: 
+    - lua_translator@*wj                     #文件管理
+    - history_translator@historyDM           # 重复上屏 电脑
+    - history_translator@historyDM3          # 重复上屏 电脑3
+    - history_translator@historySJ           # 重复上屏 手机
+  engine/filters: 
+      - lua_filter@*common_filter                    #字符集过滤
+      - reverse_lookup_filter@radical_reverse_lookup  #部件拆字滤镜，放在super_comment前面，进一步被超级注释处理以获得拼音编码的提示
+      - lua_filter@*auto_phrase                       #无感造词，关闭调频的时候将汉字写入次翻译器，当没有英文候选的时候追加\上屏可完成英文造词
+      - lua_filter@*super_lookup                      #comment前，字词输入中反查辅助筛选
+      - lua_filter@*super_filter                      #comment前,相关功能见Lua文件
+      - lua_filter@*super_english                     #comment前,负责英文方案及中英混输中英文单词格式化，语句流，自动加空格等策略
+      - lua_filter@*switch_filter                    #开关滤镜
+      - lua_filter@*cand_comment                     #传递cand.comment到全局变量，用于注音lua，避免被super_comment覆盖
+      - lua_filter@*super_comment_preedit             #OpenCC前，超级注释模块、超级preedit，支持错词提示、辅助码显示，部件组字读音注释，有声调、无声调全拼编码的转换，支持个性化配置和关闭相应的功能，详情搜索super_comment_preedit进行详细配置
+      - lua_filter@*auto_commit                      #自动上屏
+      - lua_filter@*super_replacer                    #用来替代OpenCC的处理器
+      - lua_filter@*temporary_word                   #临时4码简词
+      - lua_filter@*super_sequence*F                  #手动排序放在assist_sort 后面，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+0 移除位移
+      - lua_filter@*zhuyin                           #注音滤镜
+      - lua_filter@*chaifen                          #拆分滤镜
+      - lua_filter@*unicode_display                  #Unicode编码显示
+      - lua_filter@*read
+      - uniquifier                                    #去重
+
+  recognizer/patterns/+:
+      add_user_dict: "^'[A-Za-z/`']*$"   # 音码自造词
+
+  punctuator:
+    digit_separators: ":,."  #数字分隔符
+    __include: new_symbols:/symbol_table         # 从 symbols.yaml 导入配置
+  
+  key_binder/bindings/+: 
+    - { when: has_menu, accept: semicolon, send: 2 } #分号用于次选，微软、搜狗双拼不可启用
+    - { when: has_menu, accept: "Control+m", toggle: english_word } #通过快捷键Control+m开关英文
+    - { when: has_menu, accept: "Control+y", toggle: yin } #通过快捷键Control+y开关音码
+    - { when: has_menu, accept: "Control+q", toggle: pinyin } #通过快捷键Control+q显示注音
+    - { when: has_menu, accept: "Control+z", toggle: chaifen } #通过快捷键Control+z开关拆分
+    - { when: has_menu, accept: "Control+a", toggle: char } #使用快捷键Control+a开关虎单
+    - { when: has_menu, accept: "Control+s", toggle: word } #通过快捷键Control+s开关虎词
+    - { when: has_menu, accept: "Control+d", toggle: sentence } #通过快捷键Control+d开关虎句
+  
+  speller/alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;*/\[]
+  speller/initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;\[]
+  
+  historySJ:
+    input: z
+    size: 3
+    initial_quality: 0
+  
+  historyDM:
+    input: "["
+    size: 99
+    initial_quality: 999
+  
+  historyDM3:
+    input: "]"
+    size: 99
+    initial_quality: 999
+          
+    # 自定义词典加词(ac引导)
+  add_user_dict:
+    tag: add_user_dict
+    dictionary: wanxiang_pro
+    initial_quality: -1
+    user_dict: zc
+    enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
+    enable_user_dict: true
+    spelling_hints: 50
+    enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
+    comment_format:
+    prefix: "'"
+    tips: "〔开始造词〕"
+          
+  tiger_sentence:
+    dictionary: tiger
+    user_dict: custom_phrase/zaoci
+    db_class: stabledb
+    enable_completion: false
+    enable_sentence: true
+    initial_quality: 99
+    comment_format:
+      - xform/~[A-Za-z]*//
+  
+  char_word:
+    dictionary: tigress
+    user_dict: custom_phrase/user
+    db_class: stabledb
+    enable_completion: false # 补全提示
+    enable_sentence: false   
+    initial_quality: 9999
+    four_auto_commit: true   # 4码唯一自动上屏
+    four_auto_clear: false   # 4码空码自动清屏
+    five_commit_four: true   # 5码顶屏
+    
+  enum:
+    chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分
+    zhuyin: char     # 2种选择， char|all 只显示单字注音|完全注音

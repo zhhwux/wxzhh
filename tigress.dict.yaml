@@ -15,8 +15,8 @@ encoder:
     - length_in_range: [4, 10]
       formula: "AaBaCaZa"
 import_tables:
-  - custom_phrase/tigress_ci
-  - custom_phrase/tigress_simp_ci  # 在-前面加上#号，即可关闭简词
+  - tiger_dicts/tigress/tigress_ci
+  - tiger_dicts/tigress/tigress_simp_ci  # 在-前面加上#号，即可关闭简词
   - custom_phrase/kf
 ...
 

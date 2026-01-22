@@ -3415,7 +3415,7 @@ preset_keyboards:
       - { click: 'o', long_click: '"',  __include: styl/key }
       - { click: 'p', 
           long_click: "danyinhao", 
-          swipe_up: 'zhiding',
+          swipe_up: 'top1',
           __include: styl/key }
       # 第 2 行
       - { width: 5 }
@@ -3458,7 +3458,7 @@ preset_keyboards:
       - { click: 'l', 
           long_click: ";", 
           swipe_down: "_", 
-          swipe_up: 'qingchu',
+          swipe_up: 'chongzhi',
           __include: styl/key }
       # 第 3 行
       - { click: Shift_L, composing: split_word, width: 15, __include: styl/key }   
@@ -3538,10 +3538,6 @@ preset_keyboards:
           hilited_key_symbol_color: enter_symbol_color,
           key_symbol_offset_x: 0,
         }
-#      - { click: Up, width: 30, height: 25, key_back_color: keyboard_back_color }
-#      - { click: Control_L, width: 40, height: 25, key_back_color: keyboard_back_color }
-#      - { click: Down, width: 30, height: 25, key_back_color: keyboard_back_color } 
-
 
   letter:
     ascii_mode: 1
@@ -3612,6 +3608,179 @@ preset_keyboards:
       - conf/main_en
       - 'keys/@44/click': Keyboard_9jianhu
 
+  ctrl_26:
+    name: ctrl键盘
+    ascii_mode: 0
+    label_transform: uppercase   #键盘字母转化为大写
+    lock: true #切换程序时记忆键盘
+    width: 10
+    __patch: 
+      - conf/main_en
+      - “keys/@40”: { __include: conf/key_height_last }
+    keys:
+      # 数字行
+      - {
+          click: num1, 
+          height: 12,
+          long_click: '-',
+          key_back_color: off_key_back_color,
+          __include: styl/key,
+        }     
+      - {click: num2, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num3, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num4, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num5, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num6, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num7, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num8, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num9, key_back_color: off_key_back_color,  __include: styl/key }
+      - {click: num0, key_back_color: off_key_back_color, long_click: '+',  __include: styl/key }
+      # 第 1 行
+      - { click: 'q', long_click: '!',  __include: styl/key }
+      - { click: 'w', long_click: '@',  __include: styl/key }
+      - { click: 'e', long_click: '#',  __include: styl/key }
+      - {
+          click: 'r',
+          long_click: '$',
+          __include: styl/key,
+        }
+      - { click: 't', long_click: '%',  __include: styl/key }
+      - { click: 'y', long_click: '^',  __include: styl/key }
+      - {
+          click: 'u',
+          long_click: '&',
+          __include: styl/key,
+        }
+      - { click: 'i', long_click: '*',  __include: styl/key }
+      - { click: 'o', long_click: '"',  __include: styl/key }
+      - { click: 'p', 
+          long_click: "danyinhao", 
+          swipe_up: 'top1',
+          __include: styl/key }
+      # 第 2 行
+      - { width: 5 }
+      - { click: 'a', long_click: select_all, __include: styl/key }
+      - {
+          click: 's',
+          long_click: '(',
+          __include: styl/key,
+        }
+      - {
+          click: 'd',
+          long_click: ')',
+          __include: styl/key,
+        }
+      - {
+          click: 'f',
+          long_click: 'pozhe',
+          __include: styl/key,
+        }
+      - {
+          click: 'g',
+          long_click: '=',
+          swipe_down: kb_edit,
+          hint: '<ɪ>',
+          __include: styl/key,
+        }
+      - {
+          click: 'h',
+          long_click: '[',
+          __include: styl/key,
+        }
+      - {
+          click: 'j',
+          long_click: ']',
+          swipe_down: leftyi,
+          hint: '左移',
+          __include: styl/key,
+        }
+      - { click: 'k', long_click: ':', __include: styl/key, swipe_down: rightyi, hint: '右移' }
+      - { click: 'l', 
+          long_click: ";", 
+          swipe_down: "_", 
+          swipe_up: 'chongzhi',
+          __include: styl/key }
+      # 第 3 行
+      - { click: Shift_L, composing: split_word, width: 15, __include: styl/key }   
+#      - { click: Shift_L, width: 15 }
+      - { click: 'z',long_click: 'rev', __include: styl/key }
+      - { click: 'x', long_click: cut, __include: styl/key }
+      - { click: 'c', long_click: copy, __include: styl/key }
+      - { click: 'v', long_click: paste, __include: styl/key }
+      - {
+          click: 'b',
+          long_click: 'xiegang',
+          __include: styl/key,
+        }
+      - {
+          click: 'n',
+          long_click: '\',
+          __include: styl/key,
+        }
+      - { click: 'm', long_click: '`', __include: styl/key }
+      - { click: BS, width: 15, 
+          swipe_up: 'Escape',
+          __include: styl/key, 
+        }
+      # 第 4 行
+      - {
+          click: Keyboard_symbols,
+          long_click: Color_switch,
+          composing: Tab,
+          width: 12,
+          __include: styl/key,
+        }     
+      - {
+          click: Keyboard_number,
+          long_click: Menu,
+          composing: xiegang,
+          width: 12,      
+          __include: styl/key,
+          __patch: conf/key_height_last,
+        }  
+      - { click: 'douhao', 
+          label: ' ，',
+          long_click: '、', 
+          __include: styl/key, 
+          } 
+      - {
+          click: space,        
+#          long_click: VOICE_ASSIST,
+          swipe_up: Clear,
+          swipe_down: liquid_keyboard_clipboard,
+          swipe_left: "Left", 
+          swipe_right: "Right", 
+          key_symbol_offset_x: 0,
+          width: 32,
+          key_back_color: space_back_color,
+          hilited_key_back_color: hilited_space_back_color,
+        }      
+      - {
+          click: 'juhao',
+          label: ' 。',
+          long_click: '?',
+          __include: styl/key,
+        }
+      - {
+          click: 'Mode_switch',
+          composing: CommitScriptText,
+          __include: styl/key,  
+        }
+      - {
+          click: Return,
+          long_click: kb_func,
+          width: 14,
+          key_back_color: enter_back_color,
+          hilited_key_back_color: hilited_enter_back_color,
+          key_text_color: enter_text_color,
+          hilited_key_text_color: enter_text_color,
+          key_symbol_color: enter_symbol_color,
+          hilited_key_symbol_color: enter_symbol_color,
+          key_symbol_offset_x: 0,
+        }
+      - { click: Up, width: 30, height: 10, key_back_color: keyboard_back_color }
+      - { click: Control_L, width: 40, height: 10, key_back_color: keyboard_back_color }
+      - { click: Down, width: 30, height: 10, key_back_color: keyboard_back_color } 
       
   9jianhu:
     name: 9键虎
@@ -3713,7 +3882,7 @@ preset_keyboards:
       - { click: kb_9jianhu, __include: styl/off_func }
       - { click: Baidu, __include: styl/off_func }
       - { click: Google, __include: styl/off_func }
-      - { click: TrimeApp, __include: styl/off_func }
+      - { click: kb_ctrl_26, __include: styl/off_func }
       - { click: IME_switch, __include: styl/off_func }
 
 android_keys:
@@ -3903,6 +4072,7 @@ preset_keys:
   Keyboard_letter: { label: ' ', send: Eisu_toggle, select: letter }
 #功能键盘切换区
   kb_9jianhu: { label: '9键虎', send: Eisu_toggle, select: 9jianhu }
+  kb_ctrl_26: { label: 'ctrl键盘', send: Eisu_toggle, select: ctrl_26 }
   kb_26jian: { label: '26键', send: Eisu_toggle, select: default }
 #键盘相互跳转
   Keyboard_26jian: { label: '英', send: Eisu_toggle, select: default }

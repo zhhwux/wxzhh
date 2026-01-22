@@ -7,17 +7,16 @@ use_preset_vocabulary: false
 
 
 import_tables:
-  - cn_dicts_tiger/8105     # 字表
-  - cn_dicts_tiger/41448    # 生僻字表
+  - tiger_dicts/tiger/8105       #字表
+  - tiger_dicts/tiger/41448      #生僻字表
+  - tiger_dicts/tigress_ci # /引导的句中简词
+  - zuci/ext               #扩展词库
+  - zuci/moegirl           #萌娘词库
   
-  - cn_dicts_tiger/tigress_ci # /引导的句中简词
-  
-  - zuci/ext            # 扩展词库
-  - zuci/base.pro        #基础词库，2-3字词汇
-  - zuci/correlation.pro #关联词库，4字词汇，多为不同词频的2字语句连接起来起到合理组句的能力
-  - zuci/suggestion.pro  #联想词库，5字以上词汇，多用于输入前半段第二候选可以出来整段
-  - zuci/compatible.pro  #兼容词库，是基础词库的扩充，收录了多场景多种读音的词组
-  - zuci/poetry.pro      #诗词
-  - zuci/place.pro       #地名
-  - zuci/moegirl         #萌娘词库
+  - zuci/jichu.pro         #基础词库，2-3字词汇
+  - zuci/lianxiang.pro     #联想词库，5字以上词汇，多用于输入前半段第二候选可以出来整段
+  - zuci/duoyin.pro        #兼容词库，是基础词库的扩充，收录了多场景多种读音的词组
+  - zuci/shici.pro         #诗词
+  - zuci/diming.pro        #地名
+#  - zuci/wuzhong.pro       #物种多样性
 ...
