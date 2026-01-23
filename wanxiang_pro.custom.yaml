@@ -154,4 +154,4 @@ patch:
     
   enum:
     chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分
-    zhuyin: char     # 2种选择， char|all 只显示单字注音|完全注音
+    zhuyin: all     # 3种选择， char|word|all 只显示单字注音|单字和词典注音|单字+词典+单字拼接注音

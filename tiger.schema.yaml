@@ -116,12 +116,13 @@ engine:
     - lua_filter@*super_filter                      #comment前,相关功能见Lua文件
     - lua_filter@*super_english                     #comment前,负责英文方案及中英混输中英文单词格式化，语句流，自动加空格等策略
     - lua_filter@*switch_filter                    #开关滤镜
+    - lua_filter@*cand_comment                     #传递cand.comment到全局变量，用于注音lua，避免被super_comment覆盖
     - lua_filter@*super_comment_preedit             #OpenCC前，超级注释模块、超级preedit，支持错词提示、辅助码显示，部件组字读音注释，有声调、无声调全拼编码的转换，支持个性化配置和关闭相应的功能，详情搜索super_comment_preedit进行详细配置
     - lua_filter@*auto_commit                      #自动上屏
     - lua_filter@*super_replacer                    #用来替代OpenCC的处理器
     - lua_filter@*temporary_word                   #临时4码简词
     - lua_filter@*super_sequence*F                  #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶 
-    - simplifier@pinyin
+    - lua_filter@*zhuyin                           #注音滤镜
     - lua_filter@*chaifen                          #拆分滤镜
     - lua_filter@*unicode_display                  #Unicode编码显示
     - lua_filter@*read                             #阅读
@@ -278,3 +279,4 @@ char_word:
   
 enum:
   chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分
+  zhuyin: all     # 3种选择， char|word|all 只显示单字注音|单字和词典注音|单字+词典+单字拼接注音
