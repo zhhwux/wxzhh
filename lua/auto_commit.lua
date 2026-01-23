@@ -53,8 +53,8 @@ function M.func(input, env)
     local five_commit_four = config:get_bool("char_word/five_commit_four") or false -- 5码顶屏
     
     -- ========== 条件二：虎单虎词开关 ==========
-    local tiger_option = context:get_option("char")   -- 虎单开关
-    local tigress_option = context:get_option("word") -- 虎词开关
+    local char_option = context:get_option("char")   -- 虎单开关
+    local word_option = context:get_option("word") -- 虎词开关
     
     -- ========== 检查是否处于特定模式 ==========
     local seg = context.composition:back()
@@ -68,8 +68,8 @@ function M.func(input, env)
     -- 排除条件：如果处于以下模式，不执行本逻辑
     if context:get_option("sentence") or 
        context:get_option("yin") or 
-       context:get_option("en_only") or 
-       context:get_option("mixed") or 
+       context:get_option("english_word") or 
+       context:get_option("chinese_english") or
        is_radical_mode then
         -- 直接透传所有候选词
         for cand in input:iter() do
@@ -87,7 +87,7 @@ function M.func(input, env)
         candidate_count = candidate_count + 1
     end
     
-    if (tiger_option or tigress_option) then
+    if (char_option or word_option) then
         if input_len == 4 then
             -- 4码唯一自动上屏
             if candidate_count == 1 and four_auto_commit then
@@ -126,10 +126,11 @@ function M.func(input, env)
                 -- 顶屏上屏
                 env.engine:commit_text(env.tiger_four)
                 env.tiger_four = ""
-                
+                local config = env.engine.schema.config
+                local char_word_dict = config:get_string("char_word/dictionary")
                 -- 虎单候选词生成
                 local manual_cand
-                if tiger_option then
+                if char_option and char_word_dict == "tigress" then
                     local cand_text = letter_map_tiger[last_char] or ""
                     if cand_text ~= "" then
                         manual_cand = Candidate("manual", 0, input_len, cand_text, "")
@@ -138,7 +139,7 @@ function M.func(input, env)
                 end
                 
                 -- 虎词候选词生成
-                if tigress_option then
+                if word_option and char_word_dict == "tigress" then
                     local cand_text = letter_map_tigress[last_char] or ""
                     if cand_text ~= "" then
                         manual_cand = Candidate("manual", 0, input_len, cand_text, "")
@@ -147,9 +148,8 @@ function M.func(input, env)
                 end
                 
                 -- 五笔候选词生成
-                local config = env.engine.schema.config
-                local char_word_dict = config:get_string("char_word/dictionary")
-                if tiger_option and char_word_dict == "wubici" then
+
+                if char_option and char_word_dict == "wubici" then
                     local cand_text1 = letter_map_wubi_one[last_char] or ""
                     if cand_text1 ~= "" then
                         manual_cand = Candidate("manual", 0, input_len, cand_text1, "")

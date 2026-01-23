@@ -193,7 +193,7 @@ end
 function M.func(input, env)
     local context = env.engine.context
     local input_str = context.input
-    local input_len = #input_str
+    local input_len = utf8_len(input_str)
     local input_preedit = context:get_preedit().text
     
     -- 创建一个上下文标识符，用于检测是否是全新的输入
@@ -226,13 +226,6 @@ function M.func(input, env)
     local last_two = input_len > 1 and string_sub(input_str, -2) or ""
     
     -- 预计算选项
-    local en_on = context:get_option("english_word")
-    local char_on = context:get_option("char")
-    local word_on = context:get_option("word")
-    local sentence_on = context:get_option("sentence")
-    local yin_on = context:get_option("yin")
-    local chinese_english_on = context:get_option("chinese_english")
-    
     local is_radical_mode = false
     local seg = context.composition:back()
     if seg and (seg:has_tag("radical_lookup") or seg:has_tag("reverse_stroke") or 
@@ -309,7 +302,7 @@ function M.func(input, env)
 
         -- 拼音候选词
         if props.comment:find(";") then
-            if yin_on or has_backtick then
+            if context:get_option("yin") or has_backtick then
                 yield(cand)
             end
             goto continue
@@ -319,7 +312,7 @@ function M.func(input, env)
         if props.comment_len == 0 and props.preedit_len == 0 then
             -- 字母候选词
             if props.text:lower() == input_str:lower() then
-                if en_on then
+                if context:get_option("english_word") then
                     zm_candidates[#zm_candidates+1] = cand
                 end
                 goto continue
@@ -339,7 +332,7 @@ function M.func(input, env)
                 if input_letter_count == 0 then
                     yield(cand)  -- 预测候选词
                 elseif props.preedit_len >= 5 then
-                    if sentence_on and not has_backtick then
+                    if context:get_option("sentence") and not has_backtick then
                         if ctype == "user_phrase" then
                             yield(cand)
                         elseif ctype == "phrase" and not props.preedit:find("['_*]") and props.text_len == 1 then
@@ -350,36 +343,45 @@ function M.func(input, env)
                     end
                 elseif props.text_len >= 2 then
                     -- 虎词
-                    if (char_on and word_on) or word_on then
+                    if (context:get_option("char") and context:get_option("word")) or context:get_option("word") then
                         yield(cand)
                     end
                 else
                     -- 虎单
-                    if (char_on and word_on) or char_on then
+                    if (context:get_option("char") and context:get_option("word")) or context:get_option("char") then
                         yield(cand)
                     end
                 end
             else
-                if sentence_on and not has_backtick then
-                    if ctype == "sentence" then -- 句子
+                if (ctype == "sentence" or ctype == "user_phrase") then
+                       if context:get_option("sentence") and not has_backtick then
+                         yield(cand)
+                       end
+                       goto continue
+                elseif ctype == "phrase" then   --一定输出
+                    local config = env.engine.schema.config
+                    local char_word_dict = config:get_string("char_word/dictionary")
+                    if props.preedit:find("['_*]") or (char_word_dict == "wubici" and props.preedit:find("z")) then
                         yield(cand)
-                    elseif ctype == "user_phrase" then -- 用户自造词
-                        yield(cand)
-                    else
-                        if ctype == "phrase" and input_len < 4 and not props.preedit:find("['_*]") then
-                            if not chinese_english_on and not yin_on and not en_on then
+                    elseif input_len > 3 then  --有条件输出
+                        if context:get_option("sentence") and not has_backtick then
+                            yield(cand)
+                        end
+                    else  --一定不输出，无非是clear还是goto continue的区别
+                            if not context:get_option("chinese_english") and not context:get_option("yin") and not context:get_option("english_word") then
                                 -- 设置延迟清除标志
                                 env.delayed_clear = true
                                 env.start_clear = env.cand_counter
                                 -- 跳过当前候选，不yield
                                 goto continue
+                            else
+                                goto continue
                             end
-                        else
-                               yield(cand)
-                        end
                     end
+                    goto continue
+                else
+                    yield(cand)
                 end
-                
             end
         else
             if props.has_digit then
@@ -399,7 +401,7 @@ function M.func(input, env)
               local text_contains_input = input_lower ~= "" and text_lower:find(input_lower, 1, true) ~= nil
               if ctype == "user_table" then
                     yield(cand)
-              elseif en_on or yin_on or chinese_english_on then
+              elseif context:get_option("english_word") or context:get_option("yin") or context:get_option("chinese_english") then
                 if (props.has_chinese and ctype == "completion") or (not text_contains_input and ctype == "completion") then
                     chinese_alpha[#chinese_alpha+1] = cand
                 else
@@ -423,7 +425,7 @@ function M.func(input, env)
                 elseif preedit_letter_count == 2 then
                     yield(cand)  -- 2码符号
                 elseif preedit_letter_count == 1 then
-                  if (char_on and not word_on) then
+                  if (context:get_option("char") and not context:get_option("word")) then
                     yield(cand)  -- 1码快符
                   end
                 else
@@ -442,7 +444,7 @@ function M.func(input, env)
             yield(cand)
         end
         
-    if en_on or yin_on then
+    if context:get_option("english_word") or context:get_option("yin") then
         for _, cand in ipairs(chinese_alpha) do
             yield(cand)
         end

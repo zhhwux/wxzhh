@@ -105,7 +105,7 @@ function ZH.init(env)
 
     -- 优先级2：检查激进词模式
     local seg = context.composition:back()
-    if seg and seg:has_tag("yin_add_user") then
+    if seg and (seg:has_tag("yin_add_user") or seg:has_tag("rvlk1") or seg:has_tag("rvlk2")) then
         env.chaifen_enabled = true
         return
     end
