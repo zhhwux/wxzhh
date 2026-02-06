@@ -56,7 +56,15 @@ function M.func(input, env)
     local char_option = context:get_option("char")   -- 虎单开关
     local word_option = context:get_option("word") -- 虎词开关
     
-    if context:get_option("sentence") or context:get_option("yin") then
+    -- ========== 反查模式 ==========
+    local is_radical_mode = false
+    local seg = context.composition:back()
+    if seg and (seg:has_tag("radical_lookup") or seg:has_tag("reverse_stroke") or 
+                seg:has_tag("add_user_dict") or seg:has_tag("yin_add_user") or seg:has_tag("rvlk1")) then
+        is_radical_mode = true
+    end
+    
+    if context:get_option("sentence") or context:get_option("yin") or is_radical_mode then
         for cand in input:iter() do
             yield(cand)
         end
