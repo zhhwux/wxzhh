@@ -56,22 +56,7 @@ function M.func(input, env)
     local char_option = context:get_option("char")   -- 虎单开关
     local word_option = context:get_option("word") -- 虎词开关
     
-    -- ========== 检查是否处于特定模式 ==========
-    local seg = context.composition:back()
-    local is_radical_mode = seg and (
-        seg:has_tag("radical_lookup") 
-        or seg:has_tag("reverse_stroke") 
-        or seg:has_tag("add_user_dict")
-        or seg:has_tag("yin_add_user")
-    ) or false
-    
-    -- 排除条件：如果处于以下模式，不执行本逻辑
-    if context:get_option("sentence") or 
-       context:get_option("yin") or 
-       context:get_option("english_word") or 
-       context:get_option("chinese_english") or
-       is_radical_mode then
-        -- 直接透传所有候选词
+    if context:get_option("sentence") or context:get_option("yin") then
         for cand in input:iter() do
             yield(cand)
         end
@@ -148,7 +133,6 @@ function M.func(input, env)
                 end
                 
                 -- 五笔候选词生成
-
                 if char_option and char_word_dict == "wubici" then
                     local cand_text1 = letter_map_wubi_one[last_char] or ""
                     if cand_text1 ~= "" then
