@@ -20,13 +20,13 @@
 
 ## 核心交互
 - （一）快捷键
-    - `Control+a`（虎单开关）/ `Control+s`（虎词开关）/ `Control+d`（虎句开关）/ `Control+q`（音码开关）/ `Control+z`（显示拆分）/ `Control+y`（显示注音） 
+    - `Control+a`（虎句开关）/ `Control+s`（虎词开关）/ `Control+d`（虎单开关）/ `Control+z`（显示拆分）/ `Control+y`（显示注音）/ `Control+m`（中英混输开关）/ `Control+r`（预测开关）/ `Control+y`（音码开关）
 - （二）拼音反查
     1. 万象虎的拼音反查是 '单引号前缀 或 反引号后缀
     2. 默认小鹤+虎辅（可以使用指令更改拼音类型，输入'/zrm'，快速切换为自然码双拼， /flypy→小鹤双拼 /mspy→微软双拼 /zrm→自然码 /sogou→搜狗双拼 /abc→智能ABC /ziguang→紫光双拼 /pyjj→拼音加加 /gbpy→国标双拼 /lxsq→乱序17 
        /pinyin→全拼
        也可以在wanxiang_pro.custom.yaml更改）
-    3. 拼音注音滤镜开关 ctrl+q
+    3. 拼音注音滤镜开关 ctrl+y
 - （三）虎码造词
     1. 选字造词（保存在custom_phrase/zaoci.txt）
     2. 虎码4码临时简词功能：只要最近上屏了一段文本(无论上屏文本是用虎码还是拼音打出来的)，就可以在次选用4码虎词的格式打出这段文字 ，接下来确认上屏的自造词将会被永久化储存在custom_phrase/jianci.lua文件中
