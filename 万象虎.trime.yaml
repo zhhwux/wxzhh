@@ -3608,6 +3608,52 @@ preset_keyboards:
       - conf/main_en
       - 'keys/@44/click': Keyboard_9jianhu
 
+  number_ctrl_26:
+    ascii_mode: 0
+    width: 16.6
+    __patch:
+      - conf/num
+      - conf/num_height
+    keys:
+      # 第一行
+      - { click: '{}{Left}', long_click: '^' }
+      - { click: '+', long_click: '%' }
+      - { click: 1 }
+      - { click: 2 }
+      - { click: 3 }
+      - { click: Keyboard_ctrl_26, __include: styl/off_func }
+      # 第二行
+      - { click: '[]{Left}', long_click: 'riqi' }
+      - { click: '-', long_click: '±' }
+      - { click: 4 }
+      - { click: 5 }
+      - { click: 6 }
+      - { click: Delete, __include: styl/off_func }
+      # 第三行
+      - { click: '(){Left}', long_click: 'jine' }
+      - { click: '*', long_click: '×' }
+      - { click: 7 }
+      - { click: 8 }
+      - { click: 9 }
+      - { click: BackSpace, __include: styl/off_func }
+      # 第四行
+      - { click: '=', long_click: 'jisuan' }
+      - { click: '/', long_click: '÷' }
+      - { click: space2, long_click: paste}
+      - { click: 0 }
+      - { click: '.' }
+      - {
+          click: Return,
+          key_back_color: enter_sym_back_color,
+          hilited_key_back_color: hilited_enter_sym_back_color,
+          key_text_color: enter_sym_text_color,
+          hilited_key_text_color: enter_sym_text_color,
+        }
+      - { click: IME_switch, width: 18, height: 12, key_back_color: keyboard_back_color }
+      - { click: Left, width: 32, height: 12, key_back_color: keyboard_back_color }
+      - { click: Right, width: 32, height: 12, key_back_color: keyboard_back_color } 
+      - { click: 'liquid_keyboard_clipboard1', width: 18, height: 12, key_back_color: keyboard_back_color }
+      
   ctrl_26:
     name: ctrl键盘
     ascii_mode: 0
@@ -3731,9 +3777,9 @@ preset_keyboards:
           __include: styl/key,
         }     
       - {
-          click: Keyboard_number,
+          click: Keyboard_number_ctrl_26,
           long_click: Menu,
-          composing: xiegang,
+     #     composing: xiegang,
           width: 12,      
           __include: styl/key,
           __patch: conf/key_height_last,
@@ -4078,7 +4124,9 @@ preset_keys:
   Keyboard_26jian: { label: '英', send: Eisu_toggle, select: default }
   Keyboard_letter_26jian: { label: '中', send: Eisu_toggle, select: letter }
   Keyboard_9jianhu: { label: '英', send: Eisu_toggle, select: 9jianhu }
+  Keyboard_ctrl_26: { label: '返回', send: Eisu_toggle, select: ctrl_26 }
   Keyboard_letter_9jianhu: { label: '中', send: Eisu_toggle, select: letter_9jianhu }
+  Keyboard_number_ctrl_26: { label: '123', send: Eisu_toggle, select: number_ctrl_26 }
 #配合数字键盘相互跳转回到上一个键盘
   Keyboard_number: { label: '123', send: Eisu_toggle, select: number }
 #配合符号键盘相互跳转回到上一个键盘  

@@ -7,7 +7,7 @@ schema:
 translator:
   dictionary: mets
   enable_user_dict: false # 是否开启自动调频
-  enable_completion: true # 提前显示尚未输入完整码的字
+  enable_completion: false # 提前显示尚未输入完整码的字
   initial_quality: 99
 
 user_dict_set:
@@ -37,7 +37,7 @@ add_user_dict:
   tips: "〔自造词〕"
 
 speller:
-  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;*/\[]
+  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890;*/\[]
   # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
   initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;\[]
   delimiter: " '"     

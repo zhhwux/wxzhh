@@ -12,7 +12,8 @@ schema_list:
   - schema: wanxiang_pro #拼音方案
   - schema: mets         #虎码23整句
   - schema: xumn         #虎码原码整句
-  - schema: 9jianhu      #9键虎
+  #- schema: tigress      #官虎字词
+  #- schema: 9jianhu      #9键虎
 
 # 菜单
 menu:

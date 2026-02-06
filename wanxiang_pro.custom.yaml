@@ -2,7 +2,7 @@ patch:
   speller/algebra:
     __patch:
       #- 模糊音                                  # 这里启用后，本文件末尾可配置具体条目
-      - wanxiang_algebra:/pro/小鹤双拼             # 可选输入方案名称：自然码, 自然龙, 小鹤双拼, 搜狗双拼, 微软双拼, 智能ABC, 紫光双拼, 国标双拼，龙三
+      - wanxiang_algebra:/pro/小鹤双拼             # 可选输入方案名称：全拼、自然码, 自然龙, 小鹤双拼, 搜狗双拼, 微软双拼, 智能ABC, 紫光双拼, 国标双拼，龙三
       - wanxiang_algebra:/pro/直接辅助            #辅助码升级为：直接辅助和间接辅助两种类型，都是句中任意，不同点在于直接辅助是nire=你  而间接则需要/引导  ni/re=你 ，在这个基础上直接辅助支持拼音后任意位置数字声调参与，间接辅助声调在/引导前参与
       #- 自然码提权                               #本文件末尾，有自然码和小鹤的可以用
 ##########################以上格式受指令初始化控制，最好保持格式不变，如果发生变更请不要使用指令修改相关数据#####################################
@@ -28,6 +28,8 @@ patch:
     - name: yin
       states: [ 关, 音码 ]
       reset: 1
+    - name: completion
+      states: [ 关, 提示 ]
     - name: super_tips
       states: [ off, tips ]
     - name: tone_display
@@ -70,13 +72,12 @@ patch:
       - lua_filter@*super_filter                      #comment前,相关功能见Lua文件
       - lua_filter@*super_english                     #comment前,负责英文方案及中英混输中英文单词格式化，语句流，自动加空格等策略
       - lua_filter@*switch_filter                    #开关滤镜
-      - lua_filter@*cand_comment                     #传递cand.comment到全局变量，用于注音lua，避免被super_comment覆盖
       - lua_filter@*super_comment_preedit             #OpenCC前，超级注释模块、超级preedit，支持错词提示、辅助码显示，部件组字读音注释，有声调、无声调全拼编码的转换，支持个性化配置和关闭相应的功能，详情搜索super_comment_preedit进行详细配置
       - lua_filter@*auto_commit                      #自动上屏
       - lua_filter@*super_replacer                    #用来替代OpenCC的处理器
       - lua_filter@*temporary_word                   #临时4码简词
       - lua_filter@*super_sequence*F                  #手动排序放在assist_sort 后面，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+0 移除位移
-      - lua_filter@*zhuyin                           #注音滤镜
+      - lua_filter@*db
       - lua_filter@*chaifen                          #拆分滤镜
       - lua_filter@*unicode_display                  #Unicode编码显示
       - lua_filter@*read
@@ -87,17 +88,18 @@ patch:
 
   punctuator:
     digit_separators: ":,."  #数字分隔符
-    __include: new_symbols:/symbol_table         # 从 symbols.yaml 导入配置
+    __include: new_symbols:/symbol_table
   
   key_binder/bindings/+: 
     - { when: has_menu, accept: semicolon, send: 2 } #分号用于次选，微软、搜狗双拼不可启用
     - { when: has_menu, accept: "Control+m", toggle: english_word } #通过快捷键Control+m开关英文
-    - { when: has_menu, accept: "Control+y", toggle: yin } #通过快捷键Control+y开关音码
-    - { when: has_menu, accept: "Control+q", toggle: pinyin } #通过快捷键Control+q显示注音
+    - { when: has_menu, accept: "Control+q", toggle: yin } #通过快捷键Control+q开关音码
+    - { when: has_menu, accept: "Control+y", toggle: pinyin } #通过快捷键Control+y显示注音
     - { when: has_menu, accept: "Control+z", toggle: chaifen } #通过快捷键Control+z开关拆分
-    - { when: has_menu, accept: "Control+a", toggle: char } #使用快捷键Control+a开关虎单
+    - { when: has_menu, accept: "Control+r", toggle: completion } #通过快捷键Control+r开关输入长度为3时的completion
+    - { when: has_menu, accept: "Control+a", toggle: sentence } #使用快捷键Control+a开关虎句
     - { when: has_menu, accept: "Control+s", toggle: word } #通过快捷键Control+s开关虎词
-    - { when: has_menu, accept: "Control+d", toggle: sentence } #通过快捷键Control+d开关虎句
+    - { when: has_menu, accept: "Control+d", toggle: char } #通过快捷键Control+d开关虎单
   
   speller/alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;*/\[]
   speller/initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;\[]
@@ -130,7 +132,7 @@ patch:
     comment_format:
     prefix: "'"
     tips: "〔开始造词〕"
-          
+    
   tiger_sentence:
     dictionary: tiger
     user_dict: custom_phrase/zaoci
@@ -154,4 +156,4 @@ patch:
     
   enum:
     chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分
-    zhuyin: all     # 3种选择， char|word|all 只显示单字注音|单字和词典注音|单字+词典+单字拼接注音
+    jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码

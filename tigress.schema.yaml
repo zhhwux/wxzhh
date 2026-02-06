@@ -1,11 +1,140 @@
-# Rime schema
-# encoding: utf-8
 
 schema:
   schema_id: tigress
-  name: "官虎词库·伪方案·勿用"
+  name: 官虎字词
+
+switches:
+  - name: english_word   #中英单词
+    states: [ 中, 英 ]
+  - name: chaifen        #拆分滤镜
+    states: [ 隐, 拆 ]   
+  - name: pinyin         #拼音滤镜
+    states: [ 字, pīn ]
+  - name: charset #常用字滤镜
+    states: [ 常, 全 ]
+  - name: completion
+    states: [ 关, 提示 ]
+  - name: super_tips
+    states: [ off, tips ]
+  - name: ascii_punct    #中英标点
+    states: [ ¥, $ ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+
+# 输入引擎
+engine:
+  processors:
+    - lua_processor@*quick_symbol_text2   #重复上屏
+    - lua_processor@*super_processor       #KP小键盘、字母选词、符号快打、超强分词、重复限制、退格限制、声调回退、以词定字
+    - lua_processor@*partial_commit        #通过ctrl+1~0局部提交10个字以内的句子的前几个字（一般为正确的前几个）使用时要遵循合理的分词结构能促进后续编码打出正确的词汇
+    - lua_processor@*super_sequence*P      #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶
+    - lua_processor@*super_tips            #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
+    - ascii_composer                       #处理英文模式及中英文切换
+    - recognizer                           #与 matcher 搭配，处理符合特定规则的输入码，如网址、反查等 tags
+    - key_binder                           #在特定条件下将按键绑定到其他按键，如重定义逗号、句号为候选翻页、开关快捷键等
+    - lua_processor@*key_binder            #绑定按键扩展能力，支持正则扩展将按键生效情景更加细化
+    - speller                              #拼写处理器，接受字符按键，编辑输入
+    - punctuator                           #符号处理器，将单个字符按键直接映射为标点符号或文字
+    - selector                             #选字处理器，处理数字选字键〔可以换成别的哦〕、上、下候选定位、换页
+    - navigator                            #处理输入栏内的光标移动
+    - express_editor                       #编辑器，处理空格、回车上屏、回退键
+  segmentors:
+    - ascii_segmentor                      #标识英文段落〔譬如在英文模式下〕字母直接上屛
+    - matcher                              #配合 recognizer 标识符合特定规则的段落，如网址、反查等，加上特定 tag
+    - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
+    - affix_segmentor@yin_add_user        #音码自造词加词 tag
+    - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
+    - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
+  translators:
+    - punct_translator                     #配合 punct_segmentor 转换标点符号
+    - table_translator
+    - lua_translator@*set_schema_pro       #输入'/zrm'，快速切换为自然码双拼， /flypy→小鹤双拼 /mspy→微软双拼 /zrm→自然码 /sogou→搜狗双拼 /abc→智能ABC /ziguang→紫光双拼 /pyjj→拼音加加 /gbpy→国标双拼 /lxsq→乱序17 /pinyin→全拼
+    - lua_translator@*shijian              #农历、日期、节气、节日、时间、周、问候模板等等，触发清单看下文
+    - lua_translator@*unicode              #通过输入大写U引导，并输入Unicode编码获得汉字输出
+    - lua_translator@*super_calculator     #超级计算器，Lua内查看高级用法
+    - script_translator@yin_add_user      #音码自造词之制造词汇入口
+    - history_translator@historyDM # 重复上屏 电脑
+    - history_translator@historyDM3 # 重复上屏 电脑3
+    - history_translator@historySJ # 重复上屏 手机
+  filters:
+    - lua_filter@*common_filter                    #字符集过滤
+    - lua_filter@*super_sequence*F                  #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶 
+    - lua_filter@*db
+    - lua_filter@*chaifen                          #拆分滤镜
+    - lua_filter@*unicode_display                  #Unicode编码显示
+    - uniquifier                                    # 去重
 
 translator:
   dictionary: tigress
-  enable_user_dict: false
+  enable_user_dict: false # 是否开启自动调频
+  enable_completion: false # 补全提示
+  enable_sentence: false
+  initial_quality: 9999
+  user_dict: custom_phrase/user
+
+yin_add_user:
+  tag: yin_add_user
+  dictionary: wanxiang_pro
+  initial_quality: -1
+  user_dict: zc
+  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
+  enable_user_dict: true
+  spelling_hints: 50
+  enable_auto_phrase: false    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
+  comment_format:
+  prefix: "'"
+  suffix: "`"
+  tips: "〔音〕"
+    
+recognizer:
+  import_preset: default  # 从 default.yaml 继承通用的
+  patterns:  # 再增加方案专有的：
+    punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
+    yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
+    calculator: "^V.*$"                 #计算器功能引导
+    unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
+    email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"                            # email @ 之后不上屏
+    url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$|^[a-z]+[.].+$"  # URL
+    quick_text: ";;"                   # 重复上屏，内置''此项默认;;万象q/三者同时生效
+
+speller:
+  auto_clear: max_length # 3种选择， manual|auto|max_length 空码按下一键确认清屏|空码自动清|达到最长码时后码顶上清屏
+  max_code_length: 4
+  alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890;*/\[]
+  # initials 定义仅作为始码的按键，排除 ` 让单个的 ` 可以直接上屏
+ # initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;\[]
+  delimiter: " '"     
+  #第一位<空格>是拼音之间的分隔符；第二位<'>表示可以手动输入单引号来分割拼音。
+  auto_select: true
+  auto_select_pattern: ^;\w+|^\w{4}$ #自动上屏规则  对 [;] 引导的编码实行候选唯一自动上屏
+  # 若要添加四码上屏功能，在  ^;\w+ 后面 加上  |^\w{4}$  即可
+
+key_binder:
+  bindings:
+    - { accept: semicolon, send: 2, when: has_menu } # 分号次选
+    - { when: has_menu, accept: "Control+m", toggle: english_word } #通过快捷键Control+m开关英文
+    - { when: has_menu, accept: "Control+y", toggle: pinyin } #通过快捷键Control+y显示注音
+    - { when: has_menu, accept: "Control+z", toggle: chaifen } #通过快捷键Control+z开关拆分
+    - { when: has_menu, accept: "Control+r", toggle: completion } #通过快捷键Control+r开关输入长度为3时的completion
+
+punctuator:
+  digit_separators: ":,."  #数字分隔符
+  __include: new_symbols:/symbol_table         # 从 symbols.yaml 导入配置
+
+historySJ:
+  input: z
+  size: 3
+  initial_quality: 9
+
+historyDM:
+  input: "["
+  size: 99
+  initial_quality: 999
+
+historyDM3:
+  input: "]"
+  size: 99
+  initial_quality: 999
   
+enum:
+  chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分

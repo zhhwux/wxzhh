@@ -1,0 +1,9 @@
+
+patch:
+  schema_list:
+    - {schema: tiger}        #虎码2-4任意码整句
+    - {schema: wanxiang_pro} #拼音方案
+    - {schema: mets}         #虎码23整句
+    - {schema: xumn}         #虎码原码整句
+    #- {schema: tigress}      #官虎字词
+    #- {schema: 9jianhu}      #9键虎
