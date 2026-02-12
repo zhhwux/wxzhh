@@ -14,8 +14,9 @@ patch:
       states: [ 隐, 拆 ]   
     - name: pinyin         #拼音滤镜
       states: [ 字, pīn ]
-    - name: charset #常用字滤镜
-      states: [ 常, 全 ]
+    - name: charset_filter  #常用字滤镜
+      states: [ 全, 常 ]
+      reset: 1
     - name: sentence
       states: [ 关, 虎句 ]
       reset: 0
@@ -50,22 +51,20 @@ patch:
       states: [ 关, U编]
     - name: chinese_english
       states: [ 关, 翻译 ]
-    - name: charset_filter
-      states: [ 大, 小 ]
-      reset: 0
   
   # 输入引擎
 
   engine/processors/@before0: lua_processor@*quick_symbol_text2  #重复上屏
+  engine/segmentors/@before4: affix_segmentor@yin_add_user
   engine/translators/@before0: table_translator@char_word       #虎单/虎词/快符翻译器
   engine/translators/@before1: script_translator@tiger_sentence #虎句翻译器
   engine/translators/+: 
     - lua_translator@*wj                     #文件管理
+    - script_translator@yin_add_user
     - history_translator@historyDM           # 重复上屏 电脑
     - history_translator@historyDM3          # 重复上屏 电脑3
     - history_translator@historySJ           # 重复上屏 手机
   engine/filters: 
-      - lua_filter@*common_filter                    #字符集过滤
       - reverse_lookup_filter@radical_reverse_lookup  #部件拆字滤镜，放在super_comment前面，进一步被超级注释处理以获得拼音编码的提示
       - lua_filter@*auto_phrase                       #无感造词，关闭调频的时候将汉字写入次翻译器，当没有英文候选的时候追加\上屏可完成英文造词
       - lua_filter@*super_lookup                      #comment前，字词输入中反查辅助筛选
@@ -81,14 +80,20 @@ patch:
       - lua_filter@*chaifen                          #拆分滤镜
       - lua_filter@*unicode_display                  #Unicode编码显示
       - lua_filter@*read
-      - uniquifier                                    #去重
+      - uniquifier
+
+  charset/@0/addlist/+: ["勹丶𠂇丨丿扌亻辶讠刂囗阝屮凵厶𠂉㐄耂氵龵肀宀灬彐纟冂冖廾疋丬衤忄牜彡攵朩卩礻冫夂亠爫糸廴㠯罒匚艹禸疒钅壴犭乛亾饣虍卌丌攴頁㡀釒侖車艸の乀亅兎円曱甴鬥𠄏"]
 
   recognizer/patterns/+:
-      add_user_dict: "^'[A-Za-z/`']*$"   # 音码自造词
-
+      add_user_dict: "^`[A-Za-z']*$"   # 虎码自造词
+      yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
+      wj: "^/wj.*$"
+    
   punctuator:
-    digit_separators: ":,."  #数字分隔符
+    digit_separators: ":,."
     __include: new_symbols:/symbol_table
+    half_shape/+:
+      ';' : [ ：, ； ]
   
   key_binder/bindings/+: 
     - { when: has_menu, accept: semicolon, send: 2 } #分号用于次选，微软、搜狗双拼不可启用
@@ -101,8 +106,10 @@ patch:
     - { when: has_menu, accept: "Control+s", toggle: word } #通过快捷键Control+s开关虎词
     - { when: has_menu, accept: "Control+d", toggle: char } #通过快捷键Control+d开关虎单
   
-  speller/alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890`;*/\[]
+  speller/alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890;*/\[]
   speller/initials: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA;\[]
+  speller/auto_select: true
+  speller/auto_select_pattern: ^;\w+
   
   historySJ:
     input: z
@@ -119,9 +126,8 @@ patch:
     size: 99
     initial_quality: 999
           
-    # 自定义词典加词(ac引导)
-  add_user_dict:
-    tag: add_user_dict
+  yin_add_user:
+    tag: yin_add_user
     dictionary: wanxiang_pro
     initial_quality: -1
     user_dict: zc
@@ -133,6 +139,21 @@ patch:
     prefix: "'"
     tips: "〔开始造词〕"
     
+  add_user_dict:
+    tag: add_user_dict
+    dictionary: tiger
+    initial_quality: -1
+    user_dict: custom_phrase/zaoci
+    enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
+    enable_user_dict: true
+    spelling_hints: 50
+    enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
+    comment_format:
+    prefix: "`"
+    tips: "〔自造词〕"
+    
+  wanxiang_reverse:
+
   tiger_sentence:
     dictionary: tiger
     user_dict: custom_phrase/zaoci
@@ -140,6 +161,7 @@ patch:
     enable_completion: false
     enable_sentence: true
     initial_quality: 99
+    spelling_hints: 50
     comment_format:
       - xform/~[A-Za-z]*//
   
@@ -155,5 +177,7 @@ patch:
     five_commit_four: true   # 5码顶屏
     
   enum:
-    chaifen: all    # 2种选择， char|all 只显示单字拆分|完全拆分
+    chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
+    zhuyin: 1      # 4种选择， 1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4
+    en: false
     jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码
