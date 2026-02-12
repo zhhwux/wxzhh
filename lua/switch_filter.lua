@@ -56,7 +56,7 @@ function M.func(input, env)
       if context:get_option("char") and context:get_option("word") and context:get_option("sentence") and not has_backtick and not text_equals_input then
              yield(new_cand)
       else
-        if is_radical_mode or has_other or cand.type == "punct" then
+        if is_radical_mode or has_other or cand.type == "punct" or is_prefix_input then
         --特殊候选词
              yield(new_cand)
         elseif cnt <= 20 and utf8.len(cand.text) == 1 and cand.comment == "" and cand.type ~= "completion" then
@@ -74,8 +74,8 @@ function M.func(input, env)
           if context:get_option("sentence") and not has_backtick then
              yield(new_cand)
           end
-        elseif cand.type == "phrase" and utf8.len(cand.text) == 1 and utf8.len(context.input) > 3 and not cand.comment:find(";") then
-        --输入长度大于3时的虎句选字单字
+        elseif cand.type == "phrase" and utf8.len(cand.text) == 1 and not cand.comment:find(";") then
+        --虎句选字单字
           if context:get_option("sentence") and not context:get_option("yin") and not has_backtick then
              yield(new_cand)
           end
