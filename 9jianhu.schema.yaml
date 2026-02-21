@@ -47,7 +47,6 @@ engine:
     - script_translator@user_dict_set     #虎码自造词之使用词汇入口
     - script_translator@add_user_dict     #虎码自造词之制造词汇入口
   filters:
-    - lua_filter@*common_filter                    #字符集过滤
     - lua_filter@*temporary_word                   #临时4码简词
     - lua_filter@*chaifen                          #拆分滤镜
     - simplifier@pinyin                            #拼音滤镜 

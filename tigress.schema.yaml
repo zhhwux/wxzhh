@@ -88,11 +88,12 @@ recognizer:
   patterns:  # 再增加方案专有的：
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
     yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
+    semicolon: ";;"
     calculator: "^V.*$"                 #计算器功能引导
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"                            # email @ 之后不上屏
     url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$|^[a-z]+[.].+$"  # URL
-    quick_text: ";;"                   # 重复上屏，内置''此项默认;;万象q/三者同时生效
+   # quick_text: ";;"
 
 speller:
   auto_clear: max_length # 3种选择， manual|auto|max_length 空码按下一键确认清屏|空码自动清|达到最长码时后码顶上清屏
@@ -136,5 +137,4 @@ historyDM3:
 enum:
     chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
     zhuyin: 1      # 4种选择， 1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4
-    en: false
     jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码

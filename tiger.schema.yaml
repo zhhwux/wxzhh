@@ -6,7 +6,6 @@ schema:
   dependencies:
     - tiger_en
     - tiger_lookup 
-    - core2022
     - tigress
 
 switches:
@@ -77,12 +76,12 @@ engine:
     - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
     - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
   translators:
+    - lua_translator@*shijian              #农历、日期、节气、节日、时间、周、问候模板等等，触发清单看下文
     - table_translator@char_word          #虎单/虎词/快符翻译器
     - punct_translator                     #配合 punct_segmentor 转换标点符号
     - script_translator                    #脚本翻译器，用于拼音、粤拼等基于音节表的输入方案
     - lua_translator@*version_display      #输入'/wx'，显示万象项目网址和当前版本号
     - lua_translator@*set_schema_pro       #输入'/zrm'，快速切换为自然码双拼， /flypy→小鹤双拼 /mspy→微软双拼 /zrm→自然码 /sogou→搜狗双拼 /abc→智能ABC /ziguang→紫光双拼 /pyjj→拼音加加 /gbpy→国标双拼 /lxsq→乱序17 /pinyin→全拼
-    - lua_translator@*shijian              #农历、日期、节气、节日、时间、周、问候模板等等，触发清单看下文
     - lua_translator@*unicode              #通过输入大写U引导，并输入Unicode编码获得汉字输出
     - lua_translator@*number_translator    #数字、金额大写，通过输入大写R1234获得候选输出
     - lua_translator@*super_calculator     #超级计算器，Lua内查看高级用法
@@ -104,9 +103,9 @@ engine:
     - lua_filter@*switch_filter                    #开关滤镜
     - lua_filter@*super_comment_preedit             #OpenCC前，超级注释模块、超级preedit，支持错词提示、辅助码显示，部件组字读音注释，有声调、无声调全拼编码的转换，支持个性化配置和关闭相应的功能，详情搜索super_comment_preedit进行详细配置
     - lua_filter@*auto_commit                      #自动上屏
+    - lua_filter@*db
     - lua_filter@*super_replacer                    #用来替代OpenCC的处理器
     - lua_filter@*temporary_word                   #临时4码简词
-    - lua_filter@*db
     - lua_filter@*super_sequence*F                  #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶 
     - lua_filter@*chaifen                          #拆分滤镜
     - lua_filter@*unicode_display                  #Unicode编码显示
@@ -176,6 +175,7 @@ recognizer:
     punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
     add_user_dict: "^`[A-Za-z']*$"   # 虎码自造词
     yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
+    semicolon: ";;"
     unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
     number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
     sjc: "^.rc\\d+[-+=op]?$"
@@ -191,7 +191,7 @@ recognizer:
     email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"                            # email @ 之后不上屏
     url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$|^[a-z]+[.].+$"  # URL
     wj: "^/wj.*$"
-    quick_text: ";;"                   # 重复上屏，内置''此项默认;;万象q/三者同时生效
+   # quick_text: ";;"                   # 重复上屏，内置'' 万象q/ 此项;;（可改，未启用）三者同时生效
     
 punctuator:
   digit_separators: ":,."  #数字分隔符
@@ -254,6 +254,5 @@ char_word:
   
 enum:
   chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
-  zhuyin: 4      # 4种选择， 1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4
-  en: true       # 模式false关闭英文功能
+  zhuyin: 4      # 4种选择，1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4。（初次构建注音数据库会带来16秒左右的耗时，当设置为1时不生成注音词库故无耗时）
   jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码

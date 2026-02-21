@@ -150,7 +150,7 @@ patch:
     enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
     comment_format:
     prefix: "`"
-    tips: "〔自造词〕"
+    tips: "〔虎〕"
     
   wanxiang_reverse:
 
@@ -172,12 +172,8 @@ patch:
     enable_completion: false # 补全提示
     enable_sentence: false   
     initial_quality: 9999
-    four_auto_commit: true   # 4码唯一自动上屏
-    four_auto_clear: false   # 4码空码自动清屏
-    five_commit_four: true   # 5码顶屏
     
   enum:
     chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
-    zhuyin: 1      # 4种选择， 1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4
-    en: false
+    zhuyin: 4      # 4种选择，1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4。（初次构建注音数据库会带来16秒左右的耗时，当设置为1时不生成注音词库故无耗时）
     jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码
