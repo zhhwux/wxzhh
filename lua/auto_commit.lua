@@ -55,7 +55,8 @@ function M.func(input, env)
     -- ========== 条件二：虎单虎词开关 ==========
     local char_option = context:get_option("char")   -- 虎单开关
     local word_option = context:get_option("word") -- 虎词开关
-    
+    local schema_id = env.engine.schema.schema_id == "wanxiang_pro"
+
     -- ========== 反查模式 ==========
     local is_radical_mode = false
     local seg = context.composition:back()
@@ -64,7 +65,7 @@ function M.func(input, env)
         is_radical_mode = true
     end
     
-    if context:get_option("sentence") or context:get_option("yin") or is_radical_mode then
+    if context:get_option("sentence") or schema_id or is_radical_mode then
         for cand in input:iter() do
             yield(cand)
         end

@@ -30,6 +30,7 @@ function M.func(input, env)
     local has_other = input_preedit:find("*") or input_preedit:find("[_'/]") or context.input:find("\\")
     local config = env.engine.schema.config
     local char_word_dict = config:get_string("char_word/dictionary")
+    local yin_on = env.engine.schema.schema_id == "wanxiang_pro" and context:get_option("yin")
 
     -- 反查模式判断
     local is_radical_mode = false
@@ -45,7 +46,7 @@ function M.func(input, env)
         local text_equals_input = context.input:lower() == cand.text:lower() and #context.input == 1
               
         local cand_text = cand.text
-        local cand_comment = cand.comment
+        local cand_comment = cand.preedit.. "_" ..cand.type.. "_" ..cand.comment.. "_" ..cand.quality
         local new_cand = cand:to_shadow_candidate(
             cand.type,
             cand_text,
@@ -58,6 +59,8 @@ function M.func(input, env)
       else
         if is_radical_mode or has_other or cand.type == "punct" or is_prefix_input then
         --特殊候选词
+             yield(new_cand)
+        elseif cand.type == "time" or cand.type == "date" or cand.type == "day_summary" or cand.type == "xq" or cand.type == "oww" or cand.type == "ojq" or cand.type == "holiday_summary" or cand.type == "birthday_reminders" then
              yield(new_cand)
         elseif cnt <= 20 and utf8.len(cand.text) == 1 and cand.comment == "" and cand.type ~= "completion" then
         --虎单
@@ -76,12 +79,14 @@ function M.func(input, env)
           end
         elseif cand.type == "phrase" and utf8.len(cand.text) == 1 and not cand.comment:find(";") then
         --虎句选字单字
-          if context:get_option("sentence") and not context:get_option("yin") and not has_backtick then
+          if context:get_option("sentence") and not schema_id and not has_backtick then
              yield(new_cand)
           end
-        elseif (env.engine.context:get_option("yin") or has_backtick) and cand.comment:find(";") then
+        elseif cand.comment:find(";") then
         --拼音
+          if yin_on or has_backtick then
              yield(new_cand)
+          end
         elseif cand.text:find("[a-zA-Z]") and not text_equals_input then
              yield(new_cand)
         elseif cand.type == "completion" then

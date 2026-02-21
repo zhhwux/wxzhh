@@ -1,4 +1,4 @@
--- # 全功能优化版自造简词系统 2026-02-11 11:39:21
+-- # 自造简词系统 2026-02-18 18:38:25
 local wanxiang = require('wanxiang')
 local userdb = require("lib/userdb")
 
@@ -19,10 +19,12 @@ function Utils.get_path(is_ios, is_user_txt)
     return base .. (is_ios and "rime_user_words.lua" or "custom_phrase/jianci.lua")
 end
 
+-- 优化：增加字符转义，防止词条中含引号导致生成的 Lua 文件语法错误
 function Utils.save_lua_table(path, data)
     local lines = {"local user_words = {"}
     for k, v in pairs(data) do
-        table_insert(lines, string_format('    ["%s"] = {code = "%s", time = %d},', k, v.code, v.time or 0))
+        local safe_k = k:gsub('\\', '\\\\'):gsub('"', '\\"')
+        table_insert(lines, string_format('    ["%s"] = {code = "%s", time = %d},', safe_k, v.code, v.time or 0))
     end
     table_insert(lines, "}\nreturn user_words")
     local fd = io_open(path, "w+")
@@ -32,18 +34,17 @@ end
 
 function Utils.utf8_sub(str, s, e)
     local len = utf8_len(str)
-    if len <= 0 or s > e then return "" end
+    if not len or len <= 0 or s > e then return "" end
     local start_byte = utf8_offset(str, s)
     local end_byte = utf8_offset(str, (e > len and len or e) + 1) or (#str + 1)
     return string_sub(str, start_byte, end_byte - 1)
 end
 
--- 剔除前后无效字符
 function Utils.trim_invalid_chars(env, text)
     local code_table = env.code_table
-    if not code_table then return text end
+    if not code_table or not text then return text end
     local len = utf8_len(text)
-    if len <= 0 then return "" end
+    if not len or len <= 0 then return "" end
 
     local first = 1
     for i = 1, len do
@@ -70,7 +71,9 @@ local CURRENT_VERSION = "1.0"
 function CodeTableDB.init(env, mode)
     local db_name = mode == "tiger" and "lua/tiger_code" or "lua/wubi_code"
     local source_file = mode == "tiger" and "tiger_code_table.lua" or "wubi_code_table.lua"
-    local db = userdb.LevelDb(db_name)
+    
+    local success, db = pcall(function() return userdb.LevelDb(db_name) end)
+    if not success or not db then return end
     
     db:open_read_only()
     local db_ver = db:meta_fetch(META_VERSION_KEY)
@@ -85,7 +88,10 @@ function CodeTableDB.init(env, mode)
         local code_data = nil
         for _, p in ipairs(paths) do
             local f = loadfile(p)
-            if f then code_data = f() break end
+            if f then 
+                local s, res = pcall(f)
+                if s then code_data = res break end
+            end
         end
         if code_data then
             db:empty()
@@ -103,6 +109,7 @@ local function get_tiger_code(env, word)
     local ct = env.code_table
     if not ct then return "" end
     local len = utf8_len(word)
+    if not len then return "" end
     local valid = {}
     for i = 1, len do
         local char = Utils.utf8_sub(word, i, i)
@@ -130,6 +137,21 @@ end
 -- ==============================================
 local M = {}
 
+-- 建立倒排索引：Code -> List of Words
+-- 解决打字卡顿的关键：将 O(N) 遍历变为 O(1) 查找
+function M.build_reverse_index(env)
+    env.reverse_index = {}
+    for w, data in pairs(env.permanent_user_words) do
+        local c = data.code
+        if not env.reverse_index[c] then env.reverse_index[c] = {} end
+        table_insert(env.reverse_index[c], {w = w, time = data.time or 0})
+    end
+    -- 按时间降序排列，保证候选词顺序
+    for _, list in pairs(env.reverse_index) do
+        table.sort(list, function(a, b) return a.time > b.time end)
+    end
+end
+
 function M.init(env)
     local config = env.engine.schema.config
     local mode = config:get_string("char_word/dictionary") == "wubici" and "wubi" or "tiger"
@@ -140,6 +162,9 @@ function M.init(env)
     local path = Utils.get_path(env.is_ios)
     local f = loadfile(path)
     env.permanent_user_words = f and f() or {}
+    
+    -- 初始化时构建一次索引
+    M.build_reverse_index(env)
     
     M.process_user_txt(env, false, false) 
     
@@ -183,28 +208,28 @@ function M.process_user_txt(env, load_into_mem, allow_create)
 end
 
 function M.update_history(env, text)
-    -- 过滤无效字符
     text = Utils.trim_invalid_chars(env, text)
     if not text or text == "" then return end
 
     local code = get_tiger_code(env, text)
     if code == "" then return end
 
-    local context = env.engine.context
-    local input_code = context.input
-    local input_len = #input_code
+    local input_len = #env.engine.context.input
 
-    -- ============= 防污染：4码输入时只更新已存在的词 =============
+    -- ============= 4码输入逻辑 =============
     if input_len == 4 then
         if env.commit_dict[text] or env.permanent_user_words[text] then
             env.permanent_user_words[text] = { code = code, time = os_time() }
+            
+            -- 更新内存索引
+            M.build_reverse_index(env)
+            -- 立即写入文件
             Utils.save_lua_table(Utils.get_path(env.is_ios), env.permanent_user_words)
         end
-        -- 注意：4码输入不增加新词到临时历史，直接返回以防重复
         return 
     end
 
-    -- ============= 正常上屏（非4码）：维护临时历史 =============
+    -- ============= 正常上屏逻辑 =============
     if env.commit_dict[text] then
         for i, v in ipairs(env.commit_history) do
             if v == text then table.remove(env.commit_history, i) break end
@@ -223,48 +248,49 @@ function M.func(input, env)
     local ic = env.engine.context.input
     if ic == "" then return end
 
-    local cmd_map = {
-        ["/jcql"] = function() 
-            env.permanent_user_words, env.commit_dict, env.commit_history = {}, {}, {}
-            Utils.save_lua_table(Utils.get_path(env.is_ios), {})
-            return "※ 简词已清空" 
-        end,
-        ["/wjjc"] = function() 
-            M.process_user_txt(env, true, true) 
-            return "※ 文件简词已加载/初始化" 
-        end,
-        ["/zyj"] = function()
-            M.process_user_txt(env, true, true)
-            if not env.file_user_words or next(env.file_user_words) == nil then 
-                return "※ user.txt 为空或未加载" 
-            end
-            local count, t = 0, os_time()
-            for w, c in pairs(env.file_user_words) do
-                if not env.permanent_user_words[w] then
-                    env.permanent_user_words[w] = {code = c, time = t}
-                    count = count + 1
+    -- 指令处理 (略微精简逻辑)
+    if ic:sub(1,1) == "/" then
+        local cmd_map = {
+            ["/jcql"] = function() 
+                env.permanent_user_words, env.commit_dict, env.commit_history = {}, {}, {}
+                env.reverse_index = {}
+                Utils.save_lua_table(Utils.get_path(env.is_ios), {})
+                return "※ 简词已清空" 
+            end,
+            ["/wjjc"] = function() 
+                M.process_user_txt(env, true, true) 
+                return "※ 文件简词已加载/初始化" 
+            end,
+            ["/zyj"] = function()
+                M.process_user_txt(env, true, true)
+                if not env.file_user_words or next(env.file_user_words) == nil then return "※ user.txt 为空" end
+                local count, t = 0, os_time()
+                for w, c in pairs(env.file_user_words) do
+                    if not env.permanent_user_words[w] then
+                        env.permanent_user_words[w] = {code = c, time = t}
+                        count = count + 1
+                    end
                 end
+                M.build_reverse_index(env)
+                Utils.save_lua_table(Utils.get_path(env.is_ios), env.permanent_user_words)
+                return string_format("※ 已转 %d 条至永久库", count)
+            end,
+            ["/zwj"] = function()
+                local path = Utils.get_path(env.is_ios, true)
+                local fw = io_open(path, "a+") 
+                if not fw then return "※ 无法操作文件" end
+                for w, d in pairs(env.permanent_user_words) do
+                    fw:write(string_format("%s\t%s\n", w, d.code))
+                end
+                fw:close()
+                return "※ 已导出至文件"
             end
-            Utils.save_lua_table(Utils.get_path(env.is_ios), env.permanent_user_words)
-            return string_format("※ 已转 %d 条至永久库", count)
-        end,
-        ["/zwj"] = function()
-            local path = Utils.get_path(env.is_ios, true)
-            local fw = io_open(path, "a+") 
-            if not fw then return "※ 无法操作文件" end
-            local count = 0
-            for w, d in pairs(env.permanent_user_words) do
-                fw:write(string_format("%s\t%s\n", w, d.code))
-                count = count + 1
-            end
-            fw:close()
-            return string_format("※ 已导出 %d 条至文件", count)
-        end
-    }
-    
-    if cmd_map[ic] then yield(Candidate("cmd", 0, #ic, cmd_map[ic](), "")) return end
+        }
+        if cmd_map[ic] then yield(Candidate("cmd", 0, #ic, cmd_map[ic](), "")) return end
+    end
 
     local combined, seen = {}, {}
+    -- 1. 临时历史
     for i = #env.commit_history, 1, -1 do
         local w = env.commit_history[i]
         if env.commit_dict[w] == ic then
@@ -272,15 +298,21 @@ function M.func(input, env)
             seen[w] = true
         end
     end
-    local p_list = {}
-    for w, data in pairs(env.permanent_user_words) do
-        if data.code == ic and not seen[w] then table_insert(p_list, {t = w, time = data.time or 0}) end
+
+    -- 2. 永久词库 (使用索引查询，极速)
+    if env.reverse_index and env.reverse_index[ic] then
+        for _, item in ipairs(env.reverse_index[ic]) do
+            if not seen[item.w] then
+                table_insert(combined, {t = item.w, m = "⭐"})
+                seen[item.w] = true
+            end
+        end
     end
-    table.sort(p_list, function(a,b) return a.time > b.time end)
-    for _, v in ipairs(p_list) do table_insert(combined, {t = v.t, m = "⭐"}) seen[v.t] = true end
+
+    -- 3. 文件词库 (保持原逻辑)
     if env.file_user_words then
         for w, code in pairs(env.file_user_words) do
-            if code == ic and not seen[w] then table_insert(combined, {t = w, m = "📁"}) seen[w.t] = true end
+            if code == ic and not seen[w] then table_insert(combined, {t = w, m = "📁"}) seen[w] = true end
         end
     end
 
@@ -299,7 +331,7 @@ end
 
 function M.fini(env)
     if env.commit_conn then env.commit_conn:disconnect() end
-    for _, db in pairs(CodeTableDB.dbs) do db:close() end
+    for _, db in pairs(CodeTableDB.dbs) do if db then db:close() end end
 end
 
 return M
