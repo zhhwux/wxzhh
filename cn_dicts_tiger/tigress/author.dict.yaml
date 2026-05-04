@@ -1,0 +1,11 @@
+name: author
+version: "0.1"
+sort: by_weight
+use_preset_vocabulary: false
+columns:
+  - text
+  - code
+  - weight
+...
+是多少	oly	100
+完整代码	wxjm	100
