@@ -1,5 +1,6 @@
+# /引导的句中简词
 name: tigress_ci
-version: "2025.02.08"
+version: "0.1"
 sort: by_weight
 columns:
   - text
