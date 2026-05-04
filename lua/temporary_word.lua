@@ -1,10 +1,18 @@
--- # 自造简词系统 2026-02-18 18:38:25
-local wanxiang = require('wanxiang')
-local userdb = require("lib/userdb")
+-- # 自造简词系统 2026-04-27 15:03:05
+
+-- 基础依赖
+local function safe_require(name)
+    local status, lib = pcall(require, name)
+    if status then return lib end
+    return nil
+end
+
+local userdb = safe_require("wanxiang/userdb")
 
 local rime_api, os_time, io_open = rime_api, os.time, io.open
-local table_insert, table_concat, string_format = table.insert, table.concat, string.format
-local utf8_len, utf8_offset, string_sub = utf8.len, utf8.offset, string.sub
+local table_insert, table_concat, string_format, string_sub, string_find, string_match = 
+      table.insert, table.concat, string.format, string.sub, string.find, string.match
+local utf8_len, utf8_offset = utf8.len, utf8.offset
 
 -- ==============================================
 -- 工具函数库
@@ -19,7 +27,6 @@ function Utils.get_path(is_ios, is_user_txt)
     return base .. (is_ios and "rime_user_words.lua" or "custom_phrase/jianci.lua")
 end
 
--- 优化：增加字符转义，防止词条中含引号导致生成的 Lua 文件语法错误
 function Utils.save_lua_table(path, data)
     local lines = {"local user_words = {"}
     for k, v in pairs(data) do
@@ -137,8 +144,6 @@ end
 -- ==============================================
 local M = {}
 
--- 建立倒排索引：Code -> List of Words
--- 解决打字卡顿的关键：将 O(N) 遍历变为 O(1) 查找
 function M.build_reverse_index(env)
     env.reverse_index = {}
     for w, data in pairs(env.permanent_user_words) do
@@ -146,7 +151,6 @@ function M.build_reverse_index(env)
         if not env.reverse_index[c] then env.reverse_index[c] = {} end
         table_insert(env.reverse_index[c], {w = w, time = data.time or 0})
     end
-    -- 按时间降序排列，保证候选词顺序
     for _, list in pairs(env.reverse_index) do
         table.sort(list, function(a, b) return a.time > b.time end)
     end
@@ -163,9 +167,7 @@ function M.init(env)
     local f = loadfile(path)
     env.permanent_user_words = f and f() or {}
     
-    -- 初始化时构建一次索引
     M.build_reverse_index(env)
-    
     M.process_user_txt(env, false, false) 
     
     env.commit_history, env.commit_dict = {}, {}
@@ -177,34 +179,95 @@ end
 function M.process_user_txt(env, load_into_mem, allow_create)
     local path = Utils.get_path(env.is_ios, true)
     local file_lines, need_write = {}, false
-    if load_into_mem then env.file_user_words = {} end
+    if load_into_mem then 
+        env.file_user_words = {}
+        env.file_reverse_index = {}
+    end
 
     local f = io_open(path, "r")
     if not f then 
         if allow_create then
             local new_f = io_open(path, "w")
-            if new_f then new_f:write("") new_f:close() end
+            if new_f then 
+                new_f:write("") 
+                new_f:close() 
+            end
         end
-        return 
+        return 0, 0
     end
 
+    local lines = {}
     for line in f:lines() do
-        local word, code = line:match("([^\t]+)\t(%a+)")
-        if not word then word = line:match("[^\t]+") end
-        if word then
-            if not code or #code ~= 4 then
-                code = get_tiger_code(env, word)
-                if #code == 4 then line = word .. "\t" .. code need_write = true end
-            end
-            if load_into_mem and code and #code == 4 then env.file_user_words[word] = code end
-        end
-        table_insert(file_lines, line)
+        table_insert(lines, line)
     end
     f:close()
-    if need_write then
-        local fw = io_open(path, "w")
-        if fw then fw:write(table_concat(file_lines, "\n")) fw:close() end
+
+    local processed_count = 0
+    local skipped_count = 0
+
+    for i, line in ipairs(lines) do
+        -- 跳过空行、纯空格行和注释行
+        if line == "" or string_match(line, "^%s*$") or string_match(line, "^#") then
+            skipped_count = skipped_count + 1
+            goto continue
+        end
+
+        -- 极简解析规则 (支持格式: word, word\tcode, word\tcode\tweight, word\tweight)
+        local word, rest = string_match(line, "^([^\t]+)\t?(.*)$")
+        if not word then
+            skipped_count = skipped_count + 1
+            goto continue
+        end
+
+        local code = string_match(rest, "^%a+")
+
+        if code then
+            -- 存在有效编码，直接加载，不修改原行
+            if load_into_mem then env.file_user_words[word] = code end
+            processed_count = processed_count + 1
+        else
+            -- 缺失编码或编码不合法(例如只有权重)，自动生成并补全
+            code = get_tiger_code(env, word)
+            if code and code ~= "" then
+                if load_into_mem then env.file_user_words[word] = code end
+                lines[i] = rest == "" and (word .. "\t" .. code) or (word .. "\t" .. code .. "\t" .. rest)
+                processed_count = processed_count + 1
+                need_write = true
+            else
+                skipped_count = skipped_count + 1
+            end
+        end
+
+        ::continue::
     end
+
+    if need_write then
+        local fd = io_open(path, "w")
+        if fd then 
+            for _, line in ipairs(lines) do
+                fd:write(line .. "\n")
+            end
+            fd:close()
+        end
+    end
+
+    if load_into_mem and env.file_user_words then
+        env.file_reverse_index = {}
+        for w, c in pairs(env.file_user_words) do
+            if not env.file_reverse_index[c] then
+                env.file_reverse_index[c] = {}
+            end
+            table_insert(env.file_reverse_index[c], w)
+        end
+        
+        for _, list in pairs(env.file_reverse_index) do
+            table.sort(list, function(a, b) 
+                return utf8_len(a) < utf8_len(b)
+            end)
+        end
+    end
+    
+    return processed_count, skipped_count
 end
 
 function M.update_history(env, text)
@@ -216,20 +279,15 @@ function M.update_history(env, text)
 
     local input_len = #env.engine.context.input
 
-    -- ============= 4码输入逻辑 =============
     if input_len == 4 then
         if env.commit_dict[text] or env.permanent_user_words[text] then
             env.permanent_user_words[text] = { code = code, time = os_time() }
-            
-            -- 更新内存索引
             M.build_reverse_index(env)
-            -- 立即写入文件
             Utils.save_lua_table(Utils.get_path(env.is_ios), env.permanent_user_words)
         end
         return 
     end
 
-    -- ============= 正常上屏逻辑 =============
     if env.commit_dict[text] then
         for i, v in ipairs(env.commit_history) do
             if v == text then table.remove(env.commit_history, i) break end
@@ -248,22 +306,25 @@ function M.func(input, env)
     local ic = env.engine.context.input
     if ic == "" then return end
 
-    -- 指令处理 (略微精简逻辑)
     if ic:sub(1,1) == "/" then
         local cmd_map = {
             ["/jcql"] = function() 
                 env.permanent_user_words, env.commit_dict, env.commit_history = {}, {}, {}
                 env.reverse_index = {}
+                env.file_user_words = {}
+                env.file_reverse_index = {}
                 Utils.save_lua_table(Utils.get_path(env.is_ios), {})
                 return "※ 简词已清空" 
             end,
             ["/wjjc"] = function() 
-                M.process_user_txt(env, true, true) 
-                return "※ 文件简词已加载/初始化" 
+                local processed, skipped = M.process_user_txt(env, true, true)
+                return string_format("※ 文件简词已加载 (处理:%d 跳过:%d)", processed or 0, skipped or 0)
             end,
             ["/zyj"] = function()
                 M.process_user_txt(env, true, true)
-                if not env.file_user_words or next(env.file_user_words) == nil then return "※ user.txt 为空" end
+                if not env.file_user_words or next(env.file_user_words) == nil then 
+                    return "※ user.txt 为空" 
+                end
                 local count, t = 0, os_time()
                 for w, c in pairs(env.file_user_words) do
                     if not env.permanent_user_words[w] then
@@ -290,7 +351,6 @@ function M.func(input, env)
     end
 
     local combined, seen = {}, {}
-    -- 1. 临时历史
     for i = #env.commit_history, 1, -1 do
         local w = env.commit_history[i]
         if env.commit_dict[w] == ic then
@@ -299,7 +359,6 @@ function M.func(input, env)
         end
     end
 
-    -- 2. 永久词库 (使用索引查询，极速)
     if env.reverse_index and env.reverse_index[ic] then
         for _, item in ipairs(env.reverse_index[ic]) do
             if not seen[item.w] then
@@ -309,10 +368,12 @@ function M.func(input, env)
         end
     end
 
-    -- 3. 文件词库 (保持原逻辑)
-    if env.file_user_words then
-        for w, code in pairs(env.file_user_words) do
-            if code == ic and not seen[w] then table_insert(combined, {t = w, m = "📁"}) seen[w] = true end
+    if env.file_reverse_index and env.file_reverse_index[ic] then
+        for _, word in ipairs(env.file_reverse_index[ic]) do
+            if not seen[word] then
+                table_insert(combined, {t = word, m = "📁"})
+                seen[word] = true
+            end
         end
     end
 

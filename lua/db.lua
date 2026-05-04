@@ -1,22 +1,22 @@
--- 2026-02-21 18:18:17
-local wanxiang = require('wanxiang')
-local userdb = require("lib/userdb")
+-- gemini 2026-05-04 10:39:06
+
+ -- ==================== 0. 引入外部依赖 ====================
+local wanxiang = require("wanxiang/wanxiang")
+local userdb = require("wanxiang/userdb")
 
 -- ==================== 1. 全局常量与路径预解析 ====================
 local ENTRY_SEP = string.char(1)
 local USER_DATA_DIR = rime_api.get_user_data_dir()
 
--- 辅助函数：安全探测文件路径
 local function find_dict_path(filename)
-    local p = wanxiang.get_filename_with_fallback(filename)
-    if p then return p end
     local check_list = {
-        USER_DATA_DIR .. "/lua/" .. filename,
-        USER_DATA_DIR .. "/" .. filename
+        USER_DATA_DIR .. "/lua/" .. filename,  -- 优先 lua 目录
+        USER_DATA_DIR .. "/" .. filename       -- 次选根目录
     }
     for _, path in ipairs(check_list) do
-        local f = io.open(path, "r")
-        if f then f:close(); return path end
+        if wanxiang.file_exists(path) then 
+            return path 
+        end
     end
     return nil
 end
@@ -27,8 +27,8 @@ local PATHS = {
     tigress_ci      = find_dict_path("tiger_dicts/tigress/tigress_ci.dict.yaml") or find_dict_path("tigress_ci.dict.yaml"),
     wubici          = find_dict_path("wubici.dict.yaml"),
     en_dict         = find_dict_path("dicts/en.dict.yaml") or find_dict_path("en.dict.yaml"),
-    zhuyin_preset   = find_dict_path("dicts/jichu.pro.dict.yaml") or find_dict_path("jichu.pro.dict.yaml"),
-    zhuyin_user     = USER_DATA_DIR .. "/custom_phrase/py.txt"
+    zhuyin_word     = find_dict_path("lua/zhuyin.txt") or find_dict_path("zhuyin.txt"),
+    zhuyin_zi       = find_dict_path("lua/zhuyin_zi.txt") or find_dict_path("zhuyin_zi.txt")
 }
 
 -- 全局句柄缓存
@@ -37,7 +37,20 @@ local GLOBAL_CACHE = {
     reverse_lookup = nil
 }
 
--- ==================== 2. 通用工具函数 ====================
+-- ==================== 2. 数据库与通用工具 ====================
+local db_pool = setmetatable({}, { __mode = "v" }) -- 弱引用缓存池
+
+local function get_level_db(db_name)
+    local key = db_name .. ".userdb"
+    local db = db_pool[key]
+    if not db then
+        db = userdb.LevelDb(db_name)
+        db:open()
+        db_pool[key] = db
+    end
+    return db
+end
+
 local function log_rebuild(module_name, reason, duration)
     local log_dir = USER_DATA_DIR .. "/lua/data"
     local log_file_path = log_dir .. "/db_rebuild.log"
@@ -57,8 +70,7 @@ local function fast_init_db(db_name, internal_version, meta_key)
         return GLOBAL_CACHE.dbs[db_name], false
     end
 
-    local db = userdb.LevelDb(db_name)
-    db:open()
+    local db = get_level_db(db_name)
     GLOBAL_CACHE.dbs[db_name] = db
 
     local key = meta_key or "version"
@@ -71,8 +83,17 @@ end
 
 -- ==================== 3. 重码词替换模块 (collision_dict) ====================
 local collision_dict = {
-    CONFIG = { MAX_COMBINATIONS = 10, PRIORITY_DECREMENT = 100, SHOW_REPLACEMENT_COMMENT = true, COMMENT_PREFIX = "💫" },
-    INTERNAL_VERSION = "collision_v2", META_KEY = "db_version", SOURCE_SIG_META_KEY = "source_sig", db = nil, initialized = false
+    CONFIG = { 
+        MAX_COMBINATIONS = 10, 
+        PRIORITY_DECREMENT = 100, 
+        SHOW_REPLACEMENT_COMMENT = true, 
+        COMMENT_PREFIX = "💫" 
+    },
+    INTERNAL_VERSION = "collision_v2.1", 
+    META_KEY = "db_version", 
+    SOURCE_SIG_META_KEY = "source_sig", 
+    db = nil, 
+    initialized = false
 }
 
 function collision_dict.calc_file_signature(p)
@@ -80,13 +101,10 @@ function collision_dict.calc_file_signature(p)
     if not f then return end
     local h, s, pr, m = 2166136261, 0, 16777619, 4294967296
     while true do
-        local c = f:read(65536)
-        if not c then break end
-        s = s + #c
-        for i = 1, #c do h = ((h ~ c:byte(i)) * pr) % m end
+        local c = f:read(65536); if not c then break end
+        s = s + #c; for i = 1, #c do h = ((h ~ c:byte(i)) * pr) % m end
     end
-    f:close()
-    return string.format("%08x:%d", h, s)
+    f:close(); return string.format("%08x:%d", h, s)
 end
 
 function collision_dict.find_valid_matches(text, preedit, db)
@@ -100,29 +118,31 @@ function collision_dict.find_valid_matches(text, preedit, db)
             if i+len-1 > #chars or codes[i+len-1] ~= 2 then break end
             word = word .. chars[i+len-1]
             local data = db:fetch(word)
-            if data then
-                table.insert(raw, {k=word, s=pos[i], si=i, ei=i+len-1, d=data, l=len, bl=(pos[i+len] or (#text+1)) - pos[i]})
+            if data then 
+                table.insert(raw, {
+                    k = word, s = pos[i], si = i, ei = i+len-1, d = data, l = len, 
+                    bl = (pos[i+len] or (#text+1)) - pos[i]
+                }) 
             end
         end
     end
     for i, a in ipairs(raw) do
         local is_sub = false
-        for j, b in ipairs(raw) do
-            if i ~= j and a.si >= b.si and a.ei <= b.ei and b.l > a.l then is_sub = true; break end
+        for j, b in ipairs(raw) do 
+            if i ~= j and a.si >= b.si and a.ei <= b.ei and b.l > a.l then is_sub = true; break end 
         end
         if not is_sub and a.d ~= "" then
             local cols = {}
             for w in a.d:gmatch("[^" .. ENTRY_SEP .. "]+") do table.insert(cols, w) end
-            table.insert(matches, {key=a.k, start=a.s, byte_len=a.bl, collisions=cols, match_index=#matches+1})
+            table.insert(matches, {key = a.k, start = a.s, byte_len = a.bl, collisions = cols})
         end
     end
     return matches
 end
 
 function collision_dict.apply_replacements(text, comb, selected)
-    for i = #comb, 1, -1 do
-        local m = comb[i]
-        text = text:sub(1, m.start - 1) .. selected[i] .. text:sub(m.start + m.byte_len)
+    for i = #comb, 1, -1 do 
+        text = text:sub(1, comb[i].start - 1) .. selected[i] .. text:sub(comb[i].start + comb[i].byte_len) 
     end
     return text
 end
@@ -130,14 +150,19 @@ end
 function collision_dict.init(env)
     local sid = env.engine.schema.schema_id
     local path = (sid == "tiger") and PATHS.collision_tiger or (sid == "wubi" and PATHS.collision_wubi)
+    if not path then return end
+    
     local db, rebuild = fast_init_db("lua/collision_"..sid, collision_dict.INTERNAL_VERSION, collision_dict.META_KEY)
     collision_dict.db = db
     local sig = collision_dict.calc_file_signature(path)
     if sig and db:meta_fetch(collision_dict.SOURCE_SIG_META_KEY) ~= sig then rebuild = true end
+    
     if rebuild and path then
-        local t0, map = os.clock(), {}
-        for line in io.lines(path) do
-            line = line:match("^%s*(.-)%s*$")
+        local t0 = os.clock()
+        local map = {}
+        -- 修复处 1: 避免在高版本 Lua 中修改 const 循环变量 line
+        for raw_line in io.lines(path) do
+            local line = raw_line:match("^%s*(.-)%s*$")
             if line ~= "" and line:sub(1,1) ~= "#" then
                 local l, r = line:match("^(.-)→(.-)$")
                 local lw, rw = {}, {}
@@ -146,12 +171,6 @@ function collision_dict.init(env)
                 for _, s in ipairs(lw) do
                     map[s] = map[s] or {}
                     for _, t in ipairs(rw) do table.insert(map[s], t) end
-                end
-                if #rw > 1 then
-                    for _, k in ipairs(rw) do
-                        map[k] = map[k] or {}
-                        for _, t in ipairs(rw) do if k ~= t then table.insert(map[k], t) end end
-                    end
                 end
             end
         end
@@ -164,14 +183,21 @@ function collision_dict.init(env)
     collision_dict.initialized = (db ~= nil)
 end
 
-function collision_dict.fini() end
-
--- ==================== 4. 中文词库模块 (tigress_ci_dict) ====================
+-- ==================== 4. 中文词库模块 (tigress_ci_dict)  ====================
 local tigress_ci_dict = {
-    INTERNAL_VERSION = "tigress_ci_v10",
+    INTERNAL_VERSION = "tigress_ci_v13_ultimate",
     META_KEY = "db_version",
     db = nil
 }
+
+-- 生成a-z序列
+local function get_az_buckets()
+    local buckets = {}
+    for c = string.byte('a'), string.byte('z') do
+        table.insert(buckets, string.char(c))
+    end
+    return buckets
+end
 
 function tigress_ci_dict.init(env)
     local dict_name = env.engine.schema.config:get_string("char_word/dictionary") or "tigress"
@@ -184,35 +210,70 @@ function tigress_ci_dict.init(env)
     if needs_rebuild and dict_path then
         local start_time = os.clock()
         db:empty()
+        
         local file = io.open(dict_path, "r")
         if file then
-            local data_map = {}
+            local az_buckets = {}
+            for _, ch in ipairs(get_az_buckets()) do
+                az_buckets[ch] = {}
+            end
+
             for line in file:lines() do
-                if not line:match("^%s*#") and not line:match("^%s*$") then
-                    local text, code, weight = line:match("^([^\t]+)\t([^\t]+)\t(%d+)")
-                    if text and code and weight then
-                        local cl = code:lower()
-                        if #cl >= 4 then
-                            local pref = cl:sub(1, 3)
-                            data_map[pref] = data_map[pref] or {}
-                            table.insert(data_map[pref], {text = text, suffix = cl:sub(4), weight = tonumber(weight), len = #cl})
+                if string.byte(line) ~= 35 and line ~= "" then
+                    local t1 = string.find(line, "\t", 1, true)
+                    if t1 then
+                        local first_ch = string.sub(line, t1 + 1, t1 + 1):lower()
+                        if az_buckets[first_ch] then
+                            table.insert(az_buckets[first_ch], line)
                         end
                     end
                 end
             end
             file:close()
-            for pref, entries in pairs(data_map) do
-                table.sort(entries, function(a, b)
-                    if a.weight ~= b.weight then return a.weight > b.weight end
-                    return a.len < b.len
-                end)
-                local parts = {}
-                for _, itm in ipairs(entries) do table.insert(parts, itm.text .. itm.suffix) end
-                db:update(pref, table.concat(parts, " "))
+
+            for _, ch in ipairs(get_az_buckets()) do
+                local bucket_list = az_buckets[ch]
+                if #bucket_list > 0 then
+                    local pref_group = {}
+                    
+                    for _, line in ipairs(bucket_list) do
+                        local text, code, weight = line:match("^([^\t]+)\t([^\t]+)\t(%d+)")
+                        if text and code and weight then
+                            local cl = code:lower()
+                            if #cl >= 4 then
+                                local pref = cl:sub(1, 3)
+                                pref_group[pref] = pref_group[pref] or {}
+                                table.insert(pref_group[pref], {
+                                    text = text,
+                                    suffix = cl:sub(4),
+                                    weight = tonumber(weight),
+                                    len = #cl
+                                })
+                            end
+                        end
+                    end
+
+                    for pref, entries in pairs(pref_group) do
+                        table.sort(entries, function(a, b)
+                            if a.weight ~= b.weight then return a.weight > b.weight end
+                            return a.len < b.len
+                        end)
+                        local parts = {}
+                        for _, itm in ipairs(entries) do
+                            table.insert(parts, itm.text .. itm.suffix)
+                        end
+                        db:update(pref, table.concat(parts, " "))
+                    end
+
+                    az_buckets[ch] = nil
+                    pref_group = nil
+                    collectgarbage("step", 300)
+                end
             end
+
             db:meta_update(tigress_ci_dict.META_KEY, tigress_ci_dict.INTERNAL_VERSION)
-            log_rebuild("tigress_ci_dict", "重建", os.clock() - start_time)
-            collectgarbage()
+            log_rebuild("tigress_ci_dict", "极速分桶流式重建", os.clock() - start_time)
+            collectgarbage("collect")
         end
     end
 end
@@ -232,9 +293,10 @@ end
 -- ==================== 5. 英文词库模块 (en_dict)  ====================
 local en_dict = {
     db_name = "lua/en_dict",
-    INTERNAL_VERSION = "en_v24_bucket_batch",
+    INTERNAL_VERSION = "en_v25_bucket_batch", 
     db = nil,
-    depth = 4
+    depth = 4,
+    max_word_length = 5
 }
 
 function en_dict.init(env)
@@ -247,17 +309,15 @@ function en_dict.init(env)
 
         local file = io.open(PATHS.en_dict, "r")
         if file then
-            -- 【紧凑模式优化】：使用字符串拼接存储，减少 Table 对象开销
             local buckets = { {}, {}, {}, {}, {}, {}, {} }
 
             for line in file:lines() do
                 if not line:match("^%s*#") and not line:match("^%s*$") then
                     local text, code = line:match("^([^\t]+)\t([^\t]*)")
-                    if text and code then
+                    if text and code and #text <= en_dict.max_word_length then
                         local code_low = code:lower()
                         local first_char = code_low:sub(1,1)
 
-                        -- 确定桶索引 (a-d:1, e-h:2, i-l:3, m-p:4, q-t:5, u-x:6, others:7)
                         local b_idx = 7
                         if first_char >= 'a' and first_char <= 'd' then b_idx = 1
                         elseif first_char >= 'e' and first_char <= 'h' then b_idx = 2
@@ -267,24 +327,20 @@ function en_dict.init(env)
                         elseif first_char >= 'u' and first_char <= 'x' then b_idx = 6
                         end
 
-                        -- 核心改动：直接存储拼接字符串
                         table.insert(buckets[b_idx], text .. "\t" .. code_low)
                     end
                 end
             end
             file:close()
 
-            -- 逐桶处理并写入数据库，处理完即释放内存
             for i = 1, 7 do
                 local prefix_groups = {}
                 for _, raw_str in ipairs(buckets[i]) do
-                    -- 核心改动：解析紧凑字符串
                     local text, code_low = raw_str:match("^(.-)\t(.*)$")
                     if text and code_low then
                         local code_len = #code_low
                         local text_low = text:lower()
 
-                        -- 计算 Rank (保留原逻辑)
                         local type_rank = 3
                         local s_code = code_low
                         if text == code_low then
@@ -297,7 +353,6 @@ function en_dict.init(env)
                         local s_rank = (type_rank == 1) and "" or tostring(type_rank)
                         local entry_str = text .. "\t" .. s_code .. "\t" .. s_rank
 
-                        -- 生成前缀索引
                         local start_i = math.max(1, code_len - en_dict.depth)
                         for j = start_i, code_len do
                             local prefix = code_low:sub(1, j)
@@ -307,12 +362,10 @@ function en_dict.init(env)
                     end
                 end
 
-                -- 写入当前桶的数据
                 for prefix, entries in pairs(prefix_groups) do
                     db:update(prefix, table.concat(entries, ENTRY_SEP))
                 end
 
-                -- 释放当前桶内存
                 buckets[i] = nil
                 prefix_groups = nil
                 collectgarbage("step", 500)
@@ -359,47 +412,76 @@ end
 
 -- ==================== 6. 注音模块 (zhuyin) ====================
 local zhuyin = {
-    db_name = "lua/zhuyin",
-    version = "zhuyin_v2",
-    db = nil,
+    db_word_name = "lua/zhuyin_word",
+    db_zi_name = "lua/zhuyin_zi",
+    version = "zhuyin_v4", 
+    db_word = nil,
+    db_zi = nil,
     enum = 4
 }
 
-function zhuyin.process_comment(raw)
-    if not raw then return "" end
-    local p = raw:gsub(";[^' ]*[' ]", " ")
-    local last = p:find(";[^;]*$")
-    if last then p = p:sub(1, last - 1) end
-    return p:gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
-end
-
-function zhuyin.init_db_file(path, db, enum)
-    local f = io.open(path, "r")
-    if not f then return end
-    for line in f:lines() do
-        local k, v = line:match("^([^\t]+)\t([^\t]*)")
-        if k and v and utf8.len(k) > 1 and utf8.len(k) <= enum then
-            db:update(k, zhuyin.process_comment(v))
+local function split_by_comma(str)
+    local res = {}
+    local start = 1
+    while true do
+        local pos = str:find(",", start, true)
+        if not pos then
+            table.insert(res, str:sub(start))
+            break
         end
+        table.insert(res, str:sub(start, pos - 1))
+        start = pos + 1
     end
-    f:close()
+    return res
 end
 
 function zhuyin.init(env)
     zhuyin.enum = tonumber(env.engine.schema.config:get_string("enum/zhuyin")) or 4
     if zhuyin.enum > 1 then
-        local ver = zhuyin.version .. "_e" .. zhuyin.enum
-        local db, rebuild = fast_init_db(zhuyin.db_name, ver)
-        zhuyin.db = db
-        if rebuild then
-            local start_time = os.clock()
-            db:empty()
-            if PATHS.zhuyin_preset then zhuyin.init_db_file(PATHS.zhuyin_preset, db, zhuyin.enum) end
-            if PATHS.zhuyin_user then zhuyin.init_db_file(PATHS.zhuyin_user, db, zhuyin.enum) end
-            db:meta_update("version", ver)
-            log_rebuild("zhuyin", "重建", os.clock() - start_time)
+        local db_word, rebuild_word = fast_init_db(zhuyin.db_word_name, zhuyin.version)
+        zhuyin.db_word = db_word
+        if rebuild_word and PATHS.zhuyin_word then
+            local t0 = os.clock()
+            db_word:empty()
+            local f = io.open(PATHS.zhuyin_word, "r")
+            if f then
+                for line in f:lines() do
+                    if line ~= "" and string.byte(line) ~= 35 then
+                        local k, v = string.match(line, "^([^\t]+)\t([^\r\n]+)")
+                        if k and v then 
+                            db_word:update(k, v) 
+                        end
+                    end
+                end
+                f:close()
+            end
+            db_word:meta_update("version", zhuyin.version)
+            log_rebuild("zhuyin_word", "极速重建", os.clock() - t0)
+        end
+
+        local db_zi, rebuild_zi = fast_init_db(zhuyin.db_zi_name, zhuyin.version)
+        zhuyin.db_zi = db_zi
+        if rebuild_zi and PATHS.zhuyin_zi then
+            local t0 = os.clock()
+            db_zi:empty()
+            local f = io.open(PATHS.zhuyin_zi, "r")
+            if f then
+                -- 修复处 2: 避免在高版本 Lua 中修改 const 循环变量 line
+                for raw_line in f:lines() do
+                    local line = raw_line:match("^%s*(.-)%s*$")
+                    if line ~= "" and not line:match("^#") then
+                        local k, v = line:match("^([^\t]+)\t([^\t]+)")
+                        if not k then k, v = line:match("^(%S+)%s+(%S+)") end
+                        if k and v then db_zi:update(k, v) end
+                    end
+                end
+                f:close()
+            end
+            db_zi:meta_update("version", zhuyin.version)
+            log_rebuild("zhuyin_zi", "重建", os.clock() - t0)
         end
     end
+
     if not GLOBAL_CACHE.reverse_lookup then
         GLOBAL_CACHE.reverse_lookup = ReverseLookup("wanxiang_pro")
     end
@@ -409,38 +491,142 @@ function zhuyin.func(ctx, cand)
     if not ctx:get_option("pinyin") then return cand end
     local text = cand:get_genuine().text
     local clen = utf8.len(text)
-    local comment = nil
-    if clen == 1 and GLOBAL_CACHE.reverse_lookup then
-        local raw = GLOBAL_CACHE.reverse_lookup:lookup(text)
-        if raw then comment = raw:gsub(";[^%s]*", "") end
-    elseif zhuyin.enum > 1 and clen <= zhuyin.enum and zhuyin.db then
-        comment = zhuyin.db:fetch(text)
+    
+    if clen > zhuyin.enum then return cand end
+
+    local rev = GLOBAL_CACHE.reverse_lookup
+    if not rev then return cand end
+
+    local chars = {}
+    local rev_results = {}
+    local has_polyphone = false
+    local all_failed = true
+
+    for p, c in utf8.codes(text) do
+        local ch = utf8.char(c)
+        table.insert(chars, ch)
+        local raw = rev:lookup(ch)
+        local py_list = {}
+        if raw and raw ~= "" then
+            all_failed = false
+            raw = raw:gsub(";[^%s]*", "")
+            for py in raw:gmatch("%S+") do
+                table.insert(py_list, py)
+            end
+        end
+        table.insert(rev_results, py_list)
+        if #py_list > 1 or #py_list == 0 then
+            has_polyphone = true
+        end
     end
-    if comment and comment ~= "" then cand:get_genuine().comment = comment end
+
+    if all_failed then return cand end
+
+    local final_pinyin = {}
+
+    if not has_polyphone then
+        for _, py_list in ipairs(rev_results) do
+            table.insert(final_pinyin, py_list[1] or "")
+        end
+    else
+        local word_pinyin_str = zhuyin.db_word and zhuyin.db_word:fetch(text) or ""
+        
+        if word_pinyin_str ~= "" then
+            local vals = split_by_comma(word_pinyin_str)
+            for i, ch in ipairs(chars) do
+                local py = vals[i]
+                if py and py ~= "" then
+                    table.insert(final_pinyin, py)
+                else
+                    local r = rev_results[i]
+                    table.insert(final_pinyin, (r and r[1]) or "")
+                end
+            end
+        else
+            for i, ch in ipairs(chars) do
+                local r = rev_results[i]
+                if #r > 1 or #r == 0 then
+                    local zi_py = zhuyin.db_zi and zhuyin.db_zi:fetch(ch) or ""
+                    if zi_py ~= "" then
+                        table.insert(final_pinyin, zi_py)
+                    else
+                        table.insert(final_pinyin, (r and r[1]) or "")
+                    end
+                else
+                    table.insert(final_pinyin, r[1])
+                end
+            end
+        end
+    end
+
+    local valid_pinyin = {}
+    for _, py in ipairs(final_pinyin) do
+        if py ~= "" then table.insert(valid_pinyin, py) end
+    end
+
+    if #valid_pinyin > 0 then
+        cand:get_genuine().comment = " " .. table.concat(valid_pinyin, " ")
+    end
+
     return cand
 end
 
--- ==================== 7. 主模块 (merged_dict) ====================
+-- ==================== 7. 主模块 ====================
 local merged_dict = {}
+
 function merged_dict.init(e)
     collision_dict.init(e); e.collision = collision_dict
     tigress_ci_dict.init(e); e.tigress_ci = tigress_ci_dict
     en_dict.init(e); e.en_dict = en_dict
     zhuyin.init(e); e.zhuyin = zhuyin
     e.engine_ctx = e.engine.context
+
+    -- === 核心修改点：反引号消除逻辑集成 ===
+    e.search_key = '`'
+    e.code_pattern = '[a-z]'
+
+    e.select_notifier = e.engine_ctx.select_notifier:connect(function(ctx)
+        local input = ctx.input
+        local code = input:match('^(.-)' .. e.search_key)
+        if not code or #code == 0 then return end
+        
+        local preedit = ctx:get_preedit()
+        local no_search_string = input:match('^(.-)' .. e.search_key)
+        local edit = preedit.text:match('^(.-)' .. e.search_key)
+        
+        if edit and edit:match(e.code_pattern) then
+            ctx.input = no_search_string .. e.search_key
+        else
+            -- 【核心同步标记】：在修改 input 触发重新翻译前，打上临时标记
+            ctx:set_property("is_removing_suffix", "true")
+            
+            ctx.input = no_search_string
+            ctx:commit()
+            
+            -- 清除标记
+            ctx:set_property("is_removing_suffix", "false")
+        end
+    end)
 end
-function merged_dict.fini(e) end
+
 function merged_dict.func(input, env)
-    local ctx = env.engine_ctx
-    if not ctx then for c in input:iter() do yield(c) end return end
-    local s = ctx.input:gsub("%s+", "")
-    if #s == 0 then for c in input:iter() do yield(c) end return end
+    local ctx = env.engine_ctx; if not ctx then for c in input:iter() do yield(c) end return end
+
+    -- === 核心修改点：拦截反引号消除触发的重译 ===
+    -- 如果当前是由消除反引号触发的翻译，直接放行原输入流，跳过后续所有中文补全/英文/重码逻辑
+    if ctx:get_property("is_removing_suffix") == "true" then
+        for c in input:iter() do yield(c) end
+        return
+    end
+
+    local s = ctx.input:gsub("%s+", ""); if #s == 0 then for c in input:iter() do yield(c) end return end
     local opt_p, opt_c, opt_e = ctx:get_option("pinyin"), ctx:get_option("completion"), ctx:get_option("english_word")
     local m_s_p, seg = false, ctx.composition:back()
     local is_rad = seg and (seg:has_tag("radical_lookup") or seg:has_tag("reverse_stroke") or seg:has_tag("yin_add_user") or seg:has_tag("rvlk1"))
+    local SUBS = {"₂", "₃", "₄", "₅", "₆"}
+
     for cand in input:iter() do
         local pc = (opt_p and env.zhuyin) and env.zhuyin.func(ctx, cand) or cand
-        yield(pc)
         local col, g = env.collision, pc:get_genuine()
         if col and col.initialized and not is_rad and (g.type=="sentence" or g.type=="phrase") and #s>=5 and not m_s_p then
             m_s_p = true
@@ -449,33 +635,43 @@ function merged_dict.func(input, env)
                 local cf, res, seen, ol, sm, sa = col.CONFIG, {}, {}, {}, {}, {}
                 for i, m in ipairs(ms) do
                     local o, u = { m.key }, { [m.key] = true }
-                    for _, a in ipairs(m.collisions) do if a and a~="" and not u[a] then table.insert(o, a); u[a]=true end end
+                    for _, a in ipairs(m.collisions) do if a and not u[a] then table.insert(o, a); u[a]=true end end
                     ol[i] = o
                 end
                 local function dfs(p, le)
                     if #res >= cf.MAX_COMBINATIONS or p > #ms then
                         if #sm > 0 then
                             local nt = col.apply_replacements(g.text, sm, sa)
-                            if nt ~= g.text and not seen[nt] then seen[nt] = true; table.insert(res, nt) end
+                            if not seen[nt] then
+                                seen[nt] = true
+                                local chg, target = {}, {}
+                                for i=1, #sm do table.insert(chg, sm[i].key .. "→" .. sa[i]); table.insert(target, sa[i]) end
+                                table.insert(res, {text = nt, change = table.concat(chg, " "), short = table.concat(target, "")})
+                            end
                         end
                         return
                     end
                     dfs(p + 1, le)
-                    local m = ms[p]
-                    if m.start >= le then
+                    if ms[p].start >= le then
                         for i = 2, #ol[p] do
                             if #res >= cf.MAX_COMBINATIONS then break end
-                            table.insert(sm, m); table.insert(sa, ol[p][i]); dfs(p + 1, m.start + m.byte_len); table.remove(sm); table.remove(sa)
+                            table.insert(sm, ms[p]); table.insert(sa, ol[p][i]); dfs(p + 1, ms[p].start + ms[p].byte_len); table.remove(sm); table.remove(sa)
                         end
                     end
                 end
                 dfs(1, -1)
-                for i, t in ipairs(res) do
-                    local nc = Candidate(g.type, cand.start, cand._end, t, cf.COMMENT_PREFIX)
+                if #res > 0 then
+                    local summary = ""
+                    for i = 1, math.min(#res, 5) do summary = summary .. SUBS[i] .. res[i].short end
+                    pc.comment = (pc.comment or "") .. summary
+                end
+                yield(pc)
+                for i, itm in ipairs(res) do
+                    local nc = Candidate(g.type, cand.start, cand._end, itm.text, (#res >= 4 and itm.change or cf.COMMENT_PREFIX))
                     nc.quality = g.quality - i * cf.PRIORITY_DECREMENT; yield(nc)
                 end
-            end
-        end
+            else yield(pc) end
+        else yield(pc) end
     end
     if opt_c and #s == 3 and env.tigress_ci then
         local ok, l = pcall(env.tigress_ci.get_candidates, s:lower())
@@ -487,4 +683,12 @@ function merged_dict.func(input, env)
     end
     collectgarbage("step", 20)
 end
+
+-- === 核心修改点：增加清理函数，防止重新部署时反复注册 notifier 导致内存泄漏 ===
+function merged_dict.fini(env)
+    if env.select_notifier then
+        env.select_notifier:disconnect()
+    end
+end
+
 return merged_dict

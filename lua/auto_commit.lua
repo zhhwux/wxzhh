@@ -77,8 +77,12 @@ function M.func(input, env)
     local candidate_count = 0
     
     for cand in input:iter() do
-        table_insert(all_candidates, cand)
+      if cand.type == "table" or cand.type == "user_table" then
         candidate_count = candidate_count + 1
+        table_insert(all_candidates, cand)
+      else
+        table_insert(all_candidates, cand)
+      end
     end
     
     if (char_option or word_option) then
