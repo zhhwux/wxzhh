@@ -5,36 +5,16 @@ schema:
   name: 虎码二三整句
 
 translator:
-  dictionary: mets
+  dictionary: tiger
+  prism: mets
   enable_user_dict: false # 是否开启自动调频
   enable_completion: false # 提前显示尚未输入完整码的字
   initial_quality: 99
-
-user_dict_set:
-  dictionary: mets
-  initial_quality: 0
-  enable_completion: false
-  enable_sentence: false
-  core_word_length: 4          # >0 启用，按段学词 + 相邻段拼接
-  max_word_length: 7           # >0 启用，过长短语不记整词，只加元素权重
-  spelling_hints: 50
-  comment_format:
-  enable_user_dict: true
-  user_dict: custom_phrase/zaoci
-  db_class: tabledb 
-
+  
 add_user_dict:
-  tag: add_user_dict
-  dictionary: mets
-  initial_quality: -1
-  user_dict: custom_phrase/zaoci
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_user_dict: true
-  spelling_hints: 50
-  enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
-  comment_format:
-  prefix: "`"
-  tips: "〔自造词〕"
+  prism: mets
+user_dict_set:
+  prism: mets
 
 speller:
   alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890;*/\[]
@@ -45,6 +25,9 @@ speller:
   auto_select: true
   auto_select_pattern: ^;\w+ #自动上屏规则  对 [;] 引导的编码实行候选唯一自动上屏
   algebra:
+    - xform/[,-0]//
+    - xform/￣.*$//
+
     - derive/[qwertyuiopasdfghjklzxcvbnm](.*)/*$1/
     - derive/(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1*$2/
     - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/

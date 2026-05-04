@@ -27,6 +27,8 @@ switches:
   - name: char
     states: [ 关, 虎单 ]
     reset: 1
+  - name: yin
+    states: [ 关, 音码 ]
   - name: completion
     states: [ 关, 提示 ]
   - name: super_tips
@@ -50,76 +52,21 @@ switches:
   - name: chinese_english
     states: [ 关, 翻译 ]
 
-# 输入引擎
-engine:
-  processors:
-    - lua_processor@*quick_symbol_text2   #重复上屏
-    - lua_processor@*super_processor       #KP小键盘、字母选词、符号快打、超强分词、重复限制、退格限制、声调回退、以词定字
-    - lua_processor@*partial_commit        #通过ctrl+1~0局部提交10个字以内的句子的前几个字（一般为正确的前几个）使用时要遵循合理的分词结构能促进后续编码打出正确的词汇
-    - lua_processor@*super_sequence*P      #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶
-    - lua_processor@*super_tips            #超级提示模块：表情、简码、翻译、化学式、等等靠你想象
-    - ascii_composer                       #处理英文模式及中英文切换
-    - recognizer                           #与 matcher 搭配，处理符合特定规则的输入码，如网址、反查等 tags
-    - key_binder                           #在特定条件下将按键绑定到其他按键，如重定义逗号、句号为候选翻页、开关快捷键等
-    - lua_processor@*key_binder            #绑定按键扩展能力，支持正则扩展将按键生效情景更加细化
-    - speller                              #拼写处理器，接受字符按键，编辑输入
-    - punctuator                           #符号处理器，将单个字符按键直接映射为标点符号或文字
-    - selector                             #选字处理器，处理数字选字键〔可以换成别的哦〕、上、下候选定位、换页
-    - navigator                            #处理输入栏内的光标移动
-    - express_editor                       #编辑器，处理空格、回车上屏、回退键
-  segmentors:
-    - ascii_segmentor                      #标识英文段落〔譬如在英文模式下〕字母直接上屛
-    - matcher                              #配合 recognizer 标识符合特定规则的段落，如网址、反查等，加上特定 tag
-    - abc_segmentor                        #标识常规的文字段落，加上 abc 这个 tag
-    - affix_segmentor@add_user_dict       #虎码自造词加词 tag
-    - affix_segmentor@yin_add_user        #音码自造词加词 tag
-    - punct_segmentor                      #标识符号段落〔键入标点符号用〕加上 punct 这个 tag
-    - fallback_segmentor                   #标识其他未标识段落，必须放在最后帮助tag模式切换后回退重新处理
-  translators:
-    - lua_translator@*shijian              #农历、日期、节气、节日、时间、周、问候模板等等，触发清单看下文
-    - table_translator@char_word          #虎单/虎词/快符翻译器
-    - punct_translator                     #配合 punct_segmentor 转换标点符号
-    - script_translator                    #脚本翻译器，用于拼音、粤拼等基于音节表的输入方案
-    - lua_translator@*version_display      #输入'/wx'，显示万象项目网址和当前版本号
-    - lua_translator@*set_schema_pro       #输入'/zrm'，快速切换为自然码双拼， /flypy→小鹤双拼 /mspy→微软双拼 /zrm→自然码 /sogou→搜狗双拼 /abc→智能ABC /ziguang→紫光双拼 /pyjj→拼音加加 /gbpy→国标双拼 /lxsq→乱序17 /pinyin→全拼
-    - lua_translator@*unicode              #通过输入大写U引导，并输入Unicode编码获得汉字输出
-    - lua_translator@*number_translator    #数字、金额大写，通过输入大写R1234获得候选输出
-    - lua_translator@*super_calculator     #超级计算器，Lua内查看高级用法
-    - lua_translator@*input_statistics     #一个输入统计的脚本，以日、周、月、年等维度的统计
-    - lua_translator@*new_statistics      #临时统计，输入/st并上屏空候选开始，输入/en结束
-    - lua_translator@*wj
-    - table_translator@tiger_en
-    - script_translator@user_dict_set     #虎码自造词之使用词汇入口
-    - script_translator@add_user_dict     #虎码自造词之制造词汇入口
-    - script_translator@yin_add_user      #拼音反查
-    - history_translator@historyDM # 重复上屏 电脑
-    - history_translator@historyDM3 # 重复上屏 电脑3
-    - history_translator@historySJ # 重复上屏 手机
-  filters:
-    - reverse_lookup_filter@radical_reverse_lookup  #部件拆字滤镜，放在super_comment前面，进一步被超级注释处理以获得拼音编码+辅助码的提示
-    - lua_filter@*auto_phrase                       #无感造词，关闭调频的时候将汉字写入次翻译器，当没有英文候选的时候追加\上屏可完成英文造词
-    - lua_filter@*super_filter                      #comment前,相关功能见Lua文件
-    - lua_filter@*super_english                     #comment前,负责英文方案及中英混输中英文单词格式化，语句流，自动加空格等策略
-    - lua_filter@*switch_filter                    #开关滤镜
-    - lua_filter@*super_comment_preedit             #OpenCC前，超级注释模块、超级preedit，支持错词提示、辅助码显示，部件组字读音注释，有声调、无声调全拼编码的转换，支持个性化配置和关闭相应的功能，详情搜索super_comment_preedit进行详细配置
-    - lua_filter@*auto_commit                      #自动上屏
-    - lua_filter@*db
-    - lua_filter@*super_replacer                    #用来替代OpenCC的处理器
-    - lua_filter@*temporary_word                   #临时4码简词
-    - lua_filter@*super_sequence*F                  #手动排序，高亮候选 ctrl+j左移动 ctrl+k 右移动 ctrl+l 移除位移  ctrl+p 置顶 
-    - lua_filter@*chaifen                          #拆分滤镜
-    - lua_filter@*unicode_display                  #Unicode编码显示
-    - lua_filter@*read                             #阅读
-    - uniquifier                                    # 去重
-
 translator:
   dictionary: tiger
+  prism: wxh
   enable_user_dict: false # 是否开启自动调频
   enable_completion: false
   initial_quality: 99
 
+# 拼音混输
+yin_engine:
+  dictionary: wanxiang_pro
+
+# 虎码造词使用
 user_dict_set:
   dictionary: tiger
+  prism: wxh
   initial_quality: 0
   enable_completion: false
   enable_sentence: false
@@ -129,35 +76,10 @@ user_dict_set:
   comment_format:
   enable_user_dict: true
   user_dict: custom_phrase/zaoci
-  db_class: tabledb 
+  db_class: tabledb
 
 add_user_dict:
-  tag: add_user_dict
-  dictionary: tiger
-  initial_quality: -1
   user_dict: custom_phrase/zaoci
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_user_dict: true
-  spelling_hints: 50
-  enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
-  comment_format:
-  prefix: "`"
-  tips: "〔自造词〕"
-
-  # 拼音反查('前缀或`后缀)
-yin_add_user:
-  tag: yin_add_user
-  dictionary: wanxiang_pro
-  initial_quality: -1
-  user_dict: zc
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_user_dict: true
-  spelling_hints: 50
-  enable_auto_phrase: false    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
-  comment_format:
-  prefix: "'"
-  suffix: "`"
-  tips: "〔音〕"
 
 # 虎码、英文混合词汇
 tiger_en:
@@ -168,34 +90,18 @@ tiger_en:
   initial_quality: 2
   comment_format:
     - xform/^.+$//
-    
-recognizer:
-  import_preset: default  # 从 default.yaml 继承通用的
-  patterns:  # 再增加方案专有的：
-    punct: "^/([0-9]|10|[A-Za-z]+)$"    # 响应 symbols.yaml 的 symbols
-    add_user_dict: "^`[A-Za-z']*$"   # 虎码自造词
-    yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
-    semicolon: ";;"
-    unicode: "^U[a-f0-9]+"              # 脚本将自动获取第 2 个字符 U 作为触发前缀，响应 lua_translator@unicode，输出 Unicode 字符
-    number: "^R[0-9]+[.]?[0-9]*"        # 脚本将自动获取第 2 个字符 R 作为触发前缀，响应 lua_translator@number_translator，数字金额大写
-    sjc: "^.rc\\d+[-+=op]?$"
-    yr1: "^N0[1-9]?0?[1-9]?"
-    yr2: "^N1[02]?0?[1-9]?"
-    yr3: "^N0[1-9]?[1-2]?[1-9]?"
-    yr4: "^N1[02]?[1-2]?[1-9]?"
-    yr5: "^N0[1-9]?3?[01]?"
-    yr6: "^N1[02]?3?[01]?"
-    nyr1: "^N19?[0-9]?[0-9]?[0-1]?[0-9]?[0-9]?[0-9]?"
-    nyr2: "^N20?[0-9]?[0-9]?[0-1]?[0-9]?[0-9]?[0-9]?"
-    calculator: "^V.*$"                 #计算器功能引导
-    email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"                            # email @ 之后不上屏
-    url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$|^[a-z]+[.].+$"  # URL
-    wj: "^/wj.*$"
-   # quick_text: ";;"                   # 重复上屏，内置'' 万象q/ 此项;;（可改，未启用）三者同时生效
-    
-punctuator:
-  digit_separators: ":,."  #数字分隔符
-  __include: new_symbols:/symbol_table
+
+custom_phrase:
+  dictionary: ""
+  user_dict: ""
+chengyu:
+  dictionary: ""
+  user_dict: ""
+wanxiang_english:
+  dictionary: ""
+  user_dict: ""
+wanxiang_mixedcode:
+  dictionary: ""
 
 speller:
   alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890;*/\[]
@@ -206,6 +112,7 @@ speller:
   auto_select: true
   auto_select_pattern: ^;\w+ #自动上屏规则  对 [;] 引导的编码实行候选唯一自动上屏
   algebra:
+    - xform/[-￣]//
     - derive/^(\w)(\w),(\w)(\w)$/$1$2/ # 纯双拼的情况
     - derive/^(\w)(\w),(\w)(\w)$/$1$2$3/ # 双拼+一位辅助码的情况
     - derive|^(\w)(\w),(\w)(\w)$|$1$2$3$4/| # 双拼+2位辅助码的情况 结尾加/
@@ -215,32 +122,7 @@ speller:
     - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/
     - derive/(.*)[qwertyuiopasdfghjklzxcvbnm]/$1*/
 
-historySJ:
-  input: z
-  size: 3
-  initial_quality: 999
-
-historyDM:
-  input: "["
-  size: 99
-  initial_quality: 999
-
-historyDM3:
-  input: "]"
-  size: 99
-  initial_quality: 999
-  
-# ↓拼音滤镜
-pinyin:
-  opencc_config: pinyin.json
-  option_name: pinyin
-  show_in_comment: true #作为注解在后面显示
-  comment_format:
-    - "xform/&nbsp;/ /"
-    - "xform/（/ /"
-    - "xform/）/ /"
-  tips: all
-  
+# 虎单、虎词
 char_word:
   dictionary: tigress
   user_dict: custom_phrase/user
@@ -254,5 +136,4 @@ char_word:
   
 enum:
   chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
-  zhuyin: 4      # 4种选择，1|2|3|4 模式1只查单字，模式2只查2字词，以此类推最大为4。（初次构建注音数据库会带来16秒左右的耗时，当设置为1时不生成注音词库故无耗时）
   jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码

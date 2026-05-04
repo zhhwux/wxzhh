@@ -7,8 +7,7 @@ use_preset_vocabulary: false
 
 
 import_tables:
-  - tiger_dicts/tiger/8105       #字表
-  - tiger_dicts/tiger/41448      #生僻字表
+  - tiger_dicts/8105       #字表
   - tiger_dicts/tigress_ci # /引导的句中简词
   - zuci/ext               #扩展词库
   - zuci/moegirl           #萌娘词库

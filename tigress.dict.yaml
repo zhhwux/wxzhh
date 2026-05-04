@@ -17,6 +17,7 @@ encoder:
 import_tables:
   - tiger_dicts/tigress/tigress_ci
   - tiger_dicts/tigress/tigress_simp_ci  # 在-前面加上#号，即可关闭简词
+  - tiger_dicts/tigress/author
   - custom_phrase/kf
 ...
 
@@ -12298,7 +12299,7 @@ import_tables:
 暎	257	olmm
 暕	257	oxh
 暕	257	oxhb
-暱	257	onl
+#暱	257	onl
 暱	257	onld
 暲	257	oxn
 暲	257	oxns
@@ -24085,7 +24086,7 @@ import_tables:
 翵	0	zxn
 翶	0	uwwz
 翸	0	nloz
-翺	0	oww
+#翺	0	oww
 翺	0	owwz
 翽	0	snfz
 翿	0	gauz
@@ -31907,7 +31908,7 @@ import_tables:
 㬭	0	oyyk
 㬮	0	oldu
 㬯	0	ofdi
-㬰	0	ojr
+#㬰	0	ojr
 㬱	0	qpqo
 㬲	0	foba
 㬳	0	vens
@@ -45090,7 +45091,7 @@ import_tables:
 𡯅	0	ory
 𡯆	0	oks
 𡯇	0	opd
-𡯈	0	ojr
+#𡯈	0	ojr
 𡯉	0	ory
 𡯊	0	foy
 𡯋	0	oeg
@@ -51075,7 +51076,7 @@ import_tables:
 𣄾	0	ome
 𣄿	0	oad
 𣅀	0	zor
-𣅁	0	ojr
+#𣅁	0	ojr
 𣅂	0	ozt
 𣅃	0	oyb
 𣅄	0	ouy
@@ -51142,7 +51143,7 @@ import_tables:
 𣅹	0	ozlc
 𣅺	0	oisl
 𣅻	0	omdk
-𣅼	0	osj
+#𣅼	0	osj
 𣅽	0	osmk
 𣅾	0	mgo
 𣅾	0	mgor
@@ -51240,7 +51241,7 @@ import_tables:
 𣇏	0	oedk
 𣇐	0	ogch
 𣇑	0	gopa
-𣇒	0	odt
+#𣇒	0	odt
 𣇒	0	odtg
 𣇓	0	oaap
 𣇔	0	ohaf
@@ -51587,7 +51588,7 @@ import_tables:
 𣋾	0	osqe
 𣋿	0	zllo
 𣌀	0	ogxp
-𣌁	0	ojq
+#𣌁	0	ojq
 𣌁	0	ojqo
 𣌂	0	ojqo
 𣌃	0	wmea
@@ -74851,7 +74852,7 @@ import_tables:
 𨝸	0	vont
 𨝹	0	zct
 𨝹	0	zcte
-𨝺	0	ott
+#𨝺	0	ott
 𨝺	0	otte
 𨝻	0	buot
 𨝼	0	mhom
@@ -95559,7 +95560,7 @@ import_tables:
 𭗷	0	vsfh
 𭗸	0	vnqh
 𭗹	0	vwpp
-𭗺	0	orq
+#𭗺	0	orq
 𭗻	0	foug
 𭗼	0	ovs
 𭗽	0	ofmd
@@ -102737,7 +102738,7 @@ import_tables:
 𰕸	0	ofsi
 𰕹	0	oesl
 𰕺	0	ouks
-𰕻	0	osj
+#𰕻	0	osj
 𰕼	0	oogs
 𰕽	0	kor
 𰕾	0	coor
@@ -103828,7 +103829,7 @@ import_tables:
 𰦟	0	ofcg
 𰦠	0	voxo
 𰦡	0	ozfm
-𰦢	0	oxq
+#𰦢	0	oxq
 𰦢	0	oxqo
 𰦣	0	ooej
 𰦤	0	mzj

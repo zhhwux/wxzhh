@@ -1,0 +1,156 @@
+
+万象虎:
+  __append:
+  - xform/[-￣]//
+  - derive/^(\w)(\w),(\w)(\w)$/$1$2/ # 纯双拼的情况
+  - derive/^(\w)(\w),(\w)(\w)$/$1$2$3/ # 双拼+一位辅助码的情况
+  - derive|^(\w)(\w),(\w)(\w)$|$1$2$3$4/| # 双拼+2位辅助码的情况 结尾加/
+  
+虎码二三整句:
+  __append:
+  - xform/[,-0]//
+  - xform/￣.*$//
+  
+虎码原码整句:
+  __append:
+  - xform/[,￣0]//
+  - xform/-.*$//
+
+九键虎: 
+  __append:
+  - xform/[,￣'0]//
+  - xform/-.*$//
+################### 无重码的九键方案 ####################
+  # 将词典文件中符合对应模式的汉字编码，通过“xform/”或“derive/”转换/派生成新的编码。
+  # 所有四码：
+  ## 前半部分: 使用xform/，转换，确保第三个码不参与编码，仅有【选择】的作用。
+  - xform/([qadgjmptx][qadgjmptx])(\w\w)/$1Q$2/
+  - xform/([qadgjmptx][wbehknruy])(\w\w)/$1A$2/
+  - xform/([qadgjmptx][cfilosvz])(\w\w)/$1D$2/
+  - xform/([wbehknruy][qadgjmptx])(\w\w)/$1G$2/
+  - xform/([wbehknruy][wbehknruy])(\w\w)/$1J$2/
+  - xform/([wbehknruy][cfilosvz])(\w\w)/$1M$2/
+  - xform/([cfilosvz][qadgjmptx])(\w\w)/$1P$2/
+  - xform/([cfilosvz][wbehknruy])(\w\w)/$1T$2/
+  - xform/([cfilosvz][cfilosvz])(\w\w)/$1X$2/
+  ## 后半部分：使用derive/，派生，确保打到第五码时，候选框有字，有意义。
+  - xform/(\w\w\w)([qadgjmptx][qadgjmptx])/$1$2Q/
+  - xform/(\w\w\w)([qadgjmptx][wbehknruy])/$1$2A/
+  - xform/(\w\w\w)([qadgjmptx][cfilosvz])/$1$2D/
+  - xform/(\w\w\w)([wbehknruy][qadgjmptx])/$1$2G/
+  - xform/(\w\w\w)([wbehknruy][wbehknruy])/$1$2J/
+  - xform/(\w\w\w)([wbehknruy][cfilosvz])/$1$2M/
+  - xform/(\w\w\w)([cfilosvz][qadgjmptx])/$1$2P/
+  - xform/(\w\w\w)([cfilosvz][wbehknruy])/$1$2T/
+  - xform/(\w\w\w)([cfilosvz][cfilosvz])/$1$2X/
+  # 所有三码：
+  # ## 第3码：使用derive/，派生（此处有缺陷：派生后的码最后一位会混入四码的同位置编码，导致重码。）
+  - xform/(\l\l)([qadgjmptx])/$1$2Q/
+  - xform/(\l\l)([wbehknruy])/$1$2A/
+  - xform/(\l\l)([cfilosvz])/$1$2D/
+
+  ## 第3码：使用derive/，派生（用/*`代替，避免重码。
+  ### 注意同步调整speller/alphabet，使其包含/*`符号）; 
+  ### 注意同步speller/auto_select_pattern，增加[/*`]结尾编码的候选唯一自动上屏。
+  # - derive/(\l\l)([qadgjmptx])/$1$2\x2F/  # \x2F为"/"的ASCII编码
+  # - derive/(\l\l)([wbehknruy])/$1$2*/
+  # - derive/(\l\l)([cfilosvz])/$1$2`/
+  ## 前2码：使用xform/，转换
+  - xform/([qadgjmptx][qadgjmptx])(\l)/$1Q$2/
+  - xform/([qadgjmptx][wbehknruy])(\l)/$1A$2/
+  - xform/([qadgjmptx][cfilosvz])(\l)/$1D$2/
+  - xform/([wbehknruy][qadgjmptx])(\l)/$1G$2/
+  - xform/([wbehknruy][wbehknruy])(\l)/$1J$2/
+  - xform/([wbehknruy][cfilosvz])(\l)/$1M$2/
+  - xform/([cfilosvz][qadgjmptx])(\l)/$1P$2/
+  - xform/([cfilosvz][wbehknruy])(\l)/$1T$2/
+  - xform/([cfilosvz][cfilosvz])(\l)/$1X$2/
+  # 所有二码：
+  ## 使用“derive/”，这样打到第二个码时，候选框有字，有意义。
+  - xform/^([qadgjmptx][qadgjmptx])$/$1Q/
+  - xform/^([qadgjmptx][wbehknruy])$/$1A/
+  - xform/^([qadgjmptx][cfilosvz])$/$1D/
+  - xform/^([wbehknruy][qadgjmptx])$/$1G/
+  - xform/^([wbehknruy][wbehknruy])$/$1J/
+  - xform/^([wbehknruy][cfilosvz])$/$1M/
+  - xform/^([cfilosvz][qadgjmptx])$/$1P/
+  - xform/^([cfilosvz][wbehknruy])$/$1T/
+  - xform/^([cfilosvz][cfilosvz])$/$1X/
+
+  # 所有一码：
+  # ## 使用“derive/”，这样打到第一个码时，候选框有字，有意义。
+  - xform/^([qadgjmptx])$/$1Q/
+  - xform/^([wbehknruy])$/$1A/
+  - xform/^([cfilosvz])$/$1D/
+  ### 以上灵活使用“derive/”和“xform/”，可以确保候选框随时都有信息，不会存在无意义的空框。
+    #同时让第三和第六码仅有选择的作用而不会扰乱原来的编码（如果使用derive的话，会导致第三和第六码增加重码）
+
+  # 适配;引导的快符(只需派生一码即可，两码的快符派生后有三码，失去了快的意义)：
+  # - derive/^(;[qadgjmptx])$/$1\x2Q/
+  # - derive/^(;[wbehknruy])$/$1A/
+  # - derive/^(;[cfilosvz])$/$1D/
+
+  # 将大写字母转换成小写字母
+  - xlit/QWERTYQIOPATDFGHJKLZXCVBNM/qwertyqiopatdfghjklzxcvbnm/
+  ################### /无重码的九键方案 ####################
+
+################### 适配九键布局 ###################
+  # （表达式参考自【仓*九宫格】方案的T9拼音穷举）
+  # 相比使用“xlit/”, “derive/”可以兼容原字母键盘，使得字母键盘和九键键盘可以同时使用。
+  - xform/[abc]/a/  # 这里用@代替2，保留数字2的选择功能，方便后续设置分号二选。
+  - xform/[def]/d/  # 这里用#代替3，保留数字3的选择功能，方便后续设置单引号三选。
+  - xform/[ghi]/g/
+  - xform/[jkl]/j/
+  - xform/[mno]/m/
+  - xform/[prs]/p/
+  - xform/[tuv]/t/
+  - xform/[xyz]/x/
+  - xform/[qw]/q/  # 和传统九宫格不同，这里将1键映射到 q 和 w。
+  ################# /适配九键布局 ###################
+
+  # 下面这行代码是“derive/”的替代方案，缺点是它会使电脑上的字母键盘无法打中文字，但可以打英文字母。
+  # - xlit/qwabcdefghijklmnoprstuvxyz/11222333444555666777888999/
+  
+万象五笔:
+  __append:
+    - derive/^(\w)(\w),(\w)(\w)$/$1$2/ # 纯双拼的情况
+    - derive/^(\w)(\w),(\w)(\w)$/$1$2$3/ # 双拼+一位辅助码的情况
+    - derive|^(\w)(\w),(\w)(\w)$|$1$2$3$4/| # 双拼+2位辅助码的情况 结尾加/
+ 
+  # 万能z键拼写处理，z符号匹配任意字符
+    - derive/^(...).$/$1z/
+    - derive/^(..).(.*)$/$1z$2/
+    - derive/^(.).(.*)$/$1z$2/
+   # - derive/^.(.*)$/z$1/  # 开启本行将与z键重复上屏冲突
+
+通配符:
+  __append:
+  - derive/[qwertyuiopasdfghjklzxcvbnm](.*)/*$1/
+  - derive/(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1*$2/
+  - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/
+  - derive/(.*)[qwertyuiopasdfghjklzxcvbnm]/$1*/
+  
+#使用方案跟在拼写运算后面
+18jian:
+  __append:
+    - xlit/qwertyuiopasdfghjklzxcvbnm/qwwrryuiipassffhjjlzxxvbbm
+15jian:
+  __append:
+    - xlit/qwertyuiopasdfghjklzxcvbnm/qqeettuiipaaddggjjlzzccbbm
+14jian:
+  __append:
+    - xlit/qwertyuiopasdfghjklzxcvbnm/qqeettuuooaaddggjjlzzccbbm
+9jian:
+  __append:
+    - xform/ⅱ//  # 用于 Lua 判断输入类型的标记
+    - xform/^(.*);.*$/$1/
+    - xlit/āáǎàōóǒòēéěèīíǐìūúǔùǖǘǚǜüńňǹḿm̀/aaaaooooeeeeiiiiuuuuvvvvvnnnmmm/ # 剥离声调
+    - derive/^ng$/eng/
+    - xform/^n$/en/
+    - xform/^m$/me/
+    - derive/^(.*)$/\U$1/  # 转换为大写，为后续数字映射做准备
+    - derive/^([nl])ve$/$1ue/
+    - derive/^([NL])VE$/$1UE/
+    - derive/^([jqxy])u/$1v/
+    - derive/^([JQXY])U/$1V/
+    - xlit/ABCDEFGHIJKLMNOPQRSTUVWXYZ/22233344455566677778889999/ # 标准九宫格数字映射

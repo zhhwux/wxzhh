@@ -51,39 +51,31 @@ engine:
     - lua_filter@*chaifen                          #拆分滤镜
     - simplifier@pinyin                            #拼音滤镜 
     - lua_filter@*unicode_display                  #Unicode编码显示
+    - lua_filter@*switch_filter
     - uniquifier                                    # 去重
 
 translator:
-  dictionary: 9jianhu
+  dictionary: tiger
+  prism: 9jianhu
   enable_user_dict: false # 是否开启自动调频
   enable_completion: true # 提前显示尚未输入完整码的字
   initial_quality: 99
-
-user_dict_set:
-  dictionary: 9jianhu
-  initial_quality: 0
-  enable_completion: false
-  enable_sentence: false
-  core_word_length: 4          # >0 启用，按段学词 + 相邻段拼接
-  max_word_length: 7           # >0 启用，过长短语不记整词，只加元素权重
-  spelling_hints: 50
-  comment_format:
-  enable_user_dict: true
-  user_dict: custom_phrase/zaoci
-  db_class: tabledb 
-
+  
 add_user_dict:
-  tag: add_user_dict
-  dictionary: 9jianhu
-  initial_quality: -1
-  user_dict: custom_phrase/zaoci
-  enable_completion: true # 提前显示尚未输入完整码的字〔仅 table_translator 有效〕
-  enable_user_dict: true
-  spelling_hints: 50
-  #enable_auto_phrase: true    # lua造词功能，在custom开启，相关功能位于super_comment_preedit，开启后：模型能造的句子不造词，现有的词不造词，只造词库没有的，选词可造词
+  prism: 9jianhu
+user_dict_set:
+  prism: 9jianhu
+
+# ↓拼音滤镜
+pinyin:
+  opencc_config: pinyin.json
+  option_name: pinyin
+  show_in_comment: true #作为注解在后面显示
   comment_format:
-  prefix: "`"
-  tips: "〔自造词〕"
+    - "xform/&nbsp;/ /"
+    - "xform/（/ /"
+    - "xform/）/ /"
+  tips: all
 
 speller:
   alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA_;*/
@@ -94,6 +86,8 @@ speller:
   auto_select: true
   auto_select_pattern: ^;\w+ #自动上屏规则  对 [;] 引导的编码实行候选唯一自动上屏
   algebra:
+    - xform/[,￣'0]//
+    - xform/-.*$//
   ################### 无重码的九键方案 ####################
     # 将词典文件中符合对应模式的汉字编码，通过“xform/”或“derive/”转换/派生成新的编码。
     # 所有四码：
