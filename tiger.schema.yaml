@@ -33,6 +33,8 @@ switches:
     states: [ 关, 提示 ]
   - name: super_tips
     states: [ off, tips ]
+  - options: [ chongma_on, chongma_off, tishi_off]
+    states: [ 重码开, 重码关, 提示关]
   - name: tone_display
     states: [ 关, 句pīn ] 
   - options: [ comment_off, fuzhu_hint]  #拼音辅助码滤镜

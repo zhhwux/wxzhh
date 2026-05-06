@@ -65,6 +65,8 @@ add_user_dict:
   prism: 9jianhu
 user_dict_set:
   prism: 9jianhu
+sentence:
+    prism: 9jianhu
 
 # ↓拼音滤镜
 pinyin:
