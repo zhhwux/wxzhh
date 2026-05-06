@@ -61,7 +61,7 @@
 
 github更新需与添加模型的rime-wanxiang-tiger-fuzhu方案合并方可使用；
 完整更新包在[网盘](https://share.feijipan.com/s/bpHxxlYM)或q群文件
-（网盘另有五笔版本和已部署压缩包）
+（网盘另有五笔版本）
 
 ---
 
