@@ -150,6 +150,13 @@ local function translator(input, seg, env)
         if current_base == "虎码原码整句" then
             yaml_head = yaml_head .. "  speller/delimiter: \" _\"\n"
             yaml_head = yaml_head .. "  speller/alphabet: zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA7890_;*/'[]\n"
+            yaml_head = yaml_head .. "  sentence/prism: xumn\n"
+        end
+        if current_base == "虎码二三整句" then
+            yaml_head = yaml_head .. "  sentence/prism: mets\n"
+        end
+        if current_base == "九键虎" then
+            yaml_head = yaml_head .. "  sentence/prism: 9jianhu\n"
         end
 
         -- 加上分隔符

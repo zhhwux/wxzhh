@@ -1,6 +1,4 @@
--- gemini 2026-05-04 10:39:06
-
- -- ==================== 0. 引入外部依赖 ====================
+-- ==================== 0. 引入外部依赖 ====================
 local wanxiang = require("wanxiang/wanxiang")
 local userdb = require("wanxiang/userdb")
 
@@ -160,7 +158,6 @@ function collision_dict.init(env)
     if rebuild and path then
         local t0 = os.clock()
         local map = {}
-        -- 修复处 1: 避免在高版本 Lua 中修改 const 循环变量 line
         for raw_line in io.lines(path) do
             local line = raw_line:match("^%s*(.-)%s*$")
             if line ~= "" and line:sub(1,1) ~= "#" then
@@ -190,7 +187,6 @@ local tigress_ci_dict = {
     db = nil
 }
 
--- 生成a-z序列
 local function get_az_buckets()
     local buckets = {}
     for c = string.byte('a'), string.byte('z') do
@@ -466,7 +462,6 @@ function zhuyin.init(env)
             db_zi:empty()
             local f = io.open(PATHS.zhuyin_zi, "r")
             if f then
-                -- 修复处 2: 避免在高版本 Lua 中修改 const 循环变量 line
                 for raw_line in f:lines() do
                     local line = raw_line:match("^%s*(.-)%s*$")
                     if line ~= "" and not line:match("^#") then
@@ -581,7 +576,6 @@ function merged_dict.init(e)
     zhuyin.init(e); e.zhuyin = zhuyin
     e.engine_ctx = e.engine.context
 
-    -- === 核心修改点：反引号消除逻辑集成 ===
     e.search_key = '`'
     e.code_pattern = '[a-z]'
 
@@ -597,13 +591,9 @@ function merged_dict.init(e)
         if edit and edit:match(e.code_pattern) then
             ctx.input = no_search_string .. e.search_key
         else
-            -- 【核心同步标记】：在修改 input 触发重新翻译前，打上临时标记
             ctx:set_property("is_removing_suffix", "true")
-            
             ctx.input = no_search_string
             ctx:commit()
-            
-            -- 清除标记
             ctx:set_property("is_removing_suffix", "false")
         end
     end)
@@ -612,15 +602,19 @@ end
 function merged_dict.func(input, env)
     local ctx = env.engine_ctx; if not ctx then for c in input:iter() do yield(c) end return end
 
-    -- === 核心修改点：拦截反引号消除触发的重译 ===
-    -- 如果当前是由消除反引号触发的翻译，直接放行原输入流，跳过后续所有中文补全/英文/重码逻辑
     if ctx:get_property("is_removing_suffix") == "true" then
         for c in input:iter() do yield(c) end
         return
     end
 
     local s = ctx.input:gsub("%s+", ""); if #s == 0 then for c in input:iter() do yield(c) end return end
+    
     local opt_p, opt_c, opt_e = ctx:get_option("pinyin"), ctx:get_option("completion"), ctx:get_option("english_word")
+    
+    -- === 新增：读取重码替换开关状态 ===
+    local chongma_off = ctx:get_option("chongma_off")
+    local tishi_off   = ctx:get_option("tishi_off")
+
     local m_s_p, seg = false, ctx.composition:back()
     local is_rad = seg and (seg:has_tag("radical_lookup") or seg:has_tag("reverse_stroke") or seg:has_tag("yin_add_user") or seg:has_tag("rvlk1"))
     local SUBS = {"₂", "₃", "₄", "₅", "₆"}
@@ -628,7 +622,9 @@ function merged_dict.func(input, env)
     for cand in input:iter() do
         local pc = (opt_p and env.zhuyin) and env.zhuyin.func(ctx, cand) or cand
         local col, g = env.collision, pc:get_genuine()
-        if col and col.initialized and not is_rad and (g.type=="sentence" or g.type=="phrase") and #s>=5 and not m_s_p then
+        
+        -- === 修改：当 chongma_off 为 true 时，直接跳过重码逻辑 ===
+        if not chongma_off and col and col.initialized and not is_rad and (g.type=="sentence" or g.type=="phrase") and #s>=5 and not m_s_p then
             m_s_p = true
             local ms = col.find_valid_matches(g.text, g.preedit, col.db)
             if #ms > 0 then
@@ -660,14 +656,22 @@ function merged_dict.func(input, env)
                     end
                 end
                 dfs(1, -1)
-                if #res > 0 then
+                
+                -- === 修改：当 tishi_off 为 false 时才显示提示 ===
+                if #res > 0 and not tishi_off then
                     local summary = ""
                     for i = 1, math.min(#res, 5) do summary = summary .. SUBS[i] .. res[i].short end
                     pc.comment = (pc.comment or "") .. summary
                 end
                 yield(pc)
+                
                 for i, itm in ipairs(res) do
-                    local nc = Candidate(g.type, cand.start, cand._end, itm.text, (#res >= 4 and itm.change or cf.COMMENT_PREFIX))
+                    -- === 修改：当 tishi_off 为 true 时，不给替换词加注释 ===
+                    local comment = ""
+                    if not tishi_off then
+                        comment = (#res >= 4 and itm.change or cf.COMMENT_PREFIX)
+                    end
+                    local nc = Candidate(g.type, cand.start, cand._end, itm.text, comment)
                     nc.quality = g.quality - i * cf.PRIORITY_DECREMENT; yield(nc)
                 end
             else yield(pc) end
@@ -684,7 +688,6 @@ function merged_dict.func(input, env)
     collectgarbage("step", 20)
 end
 
--- === 核心修改点：增加清理函数，防止重新部署时反复注册 notifier 导致内存泄漏 ===
 function merged_dict.fini(env)
     if env.select_notifier then
         env.select_notifier:disconnect()

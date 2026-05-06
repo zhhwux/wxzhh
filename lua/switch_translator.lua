@@ -25,7 +25,8 @@ local sources = {
             return false
         end,
         candidate_config = {
-            default = { type = "table", start = 0, dynamic_end = true }
+            -- 【修改点】 default 改为 fallback
+            fallback = { type = "table", start = 0, dynamic_end = true }
         },
         use_native_type = true
     },
@@ -41,7 +42,8 @@ local sources = {
             return schema_id ~= "wanxiang_pro" 
         end,
         candidate_config = {
-            default = { type = "pinyin", start = 0, dynamic_end = true }
+            -- 【修改点】 default 改为 fallback
+            fallback = { type = "pinyin", start = 0, dynamic_end = true }
         }
     },
     {
@@ -49,9 +51,7 @@ local sources = {
         option = "sentence",
         type = "script_translator",
         tag = "",
-        -- 【修改点1】将静态数值改为动态函数
         max_candidates = function(schema_id, env)
-            -- 检查 schema_id 是否为 wanxiang_pro 并且 yin 开关开启
             if not env then return 10 end  -- 安全处理
             local context = env.engine.context
             local yin_enabled = context:get_option("yin")
@@ -62,7 +62,6 @@ local sources = {
         filter = function(schema_id, input_len)
             return schema_id == "wanxiang_pro" or input_len >= 8
         end,
-        -- 将原主循环中的硬编码逻辑移入配置中，保持主循环的纯粹性
         candidate_filter = function(cand, env)
             local schema_id = env.engine.schema.schema_id
             if schema_id ~= "wanxiang_pro" then
@@ -72,7 +71,8 @@ local sources = {
         end,
         candidate_config = {
             wanxiang_pro = { type = "sentence", start = 0, dynamic_end = true },
-            default = { type = "sentence", start = 0, dynamic_end = true }
+            -- 【修改点】 default 改为 fallback
+            fallback = { type = "sentence", start = 0, dynamic_end = true }
         },
         use_native_type = true
     },
@@ -88,7 +88,8 @@ local sources = {
             return schema_id ~= "wanxiang_pro" 
         end,
         candidate_config = {
-            default = { type = "table", start = 0, dynamic_end = true }
+            -- 【修改点】 default 改为 fallback
+            fallback = { type = "table", start = 0, dynamic_end = true }
         },
         use_native_type = true
     },
@@ -109,16 +110,15 @@ end
 -- 3. 辅助函数
 local function create_candidate(env, source, cand, index, input_len)
     local schema_id = env.engine.schema.schema_id
-    local cfg = source.candidate_config[schema_id] or source.candidate_config.default
+    -- 【修改点】调用时也由 .default 改为 .fallback
+    local cfg = source.candidate_config[schema_id] or source.candidate_config.fallback
     
-    -- 复用传入的 input_len，避免重复调用 #env.engine.context.input
     local end_pos = cfg.dynamic_end and input_len or (cfg.end_pos or 0)
     local cand_type = source.use_native_type and cand.type or cfg.type
     
     local nc = Candidate(cand_type, cfg.start or 0, end_pos, cand.text, "")
     
     nc.quality = source.priority - index
-    -- 优化字符串拼接逻辑
     nc.comment = cand.comment and (cand.comment .. " " .. source.tag) or source.tag
     nc.preedit = cand.preedit or nc.preedit
     
@@ -147,9 +147,8 @@ local function lua_translator(input, seg, env)
                 local count = 0
                 local filter = source.candidate_filter
                 
-                -- 【修改点2】动态解析 max_candidates，兼容旧的数字配置和新的函数配置
                 local max_cands = type(source.max_candidates) == "function" 
-                                  and source.max_candidates(schema_id, env)  -- 这里添加 env 参数
+                                  and source.max_candidates(schema_id, env)
                                   or source.max_candidates
                 
                 for cand in translation:iter() do
@@ -157,7 +156,6 @@ local function lua_translator(input, seg, env)
                         count = count + 1
                         yield(create_candidate(env, source, cand, count, input_len))
                         
-                        -- 【修改点3】使用解析后的 max_cands 进行判断
                         if count >= max_cands then 
                             break 
                         end
