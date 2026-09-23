@@ -2,6 +2,7 @@ __include: tiger.schema:/
 schema:
   schema_id: 9jianhu
   name: 九键虎
+  dependencies: []
 
 switches:
   - name: ascii_mode
@@ -48,6 +49,7 @@ engine:
     - script_translator@add_user_dict     #虎码自造词之制造词汇入口
   filters:
     - lua_filter@*temporary_word                   #临时4码简词
+    - lua_filter@*9jianhu_chengyu                  #九键虎成语及四字流打滤镜
     - lua_filter@*chaifen                          #拆分滤镜
     - simplifier@pinyin                            #拼音滤镜 
     - lua_filter@*unicode_display                  #Unicode编码显示
@@ -55,18 +57,21 @@ engine:
     - uniquifier                                    # 去重
 
 translator:
-  dictionary: tiger
+  dictionary: 9jianhu
   prism: 9jianhu
   enable_user_dict: false # 是否开启自动调频
   enable_completion: true # 提前显示尚未输入完整码的字
   initial_quality: 99
   
 add_user_dict:
+  dictionary: 9jianhu
   prism: 9jianhu
 user_dict_set:
+  dictionary: 9jianhu
   prism: 9jianhu
 sentence:
-    prism: 9jianhu
+  dictionary: 9jianhu
+  prism: 9jianhu
 
 # ↓拼音滤镜
 pinyin:
@@ -181,7 +186,3 @@ speller:
     # 下面这行代码是“derive/”的替代方案，缺点是它会使电脑上的字母键盘无法打中文字，但可以打英文字母。
     # - xlit/qwabcdefghijklmnoprstuvxyz/11222333444555666777888999/
 
-    - derive/[qwertyuiopasdfghjklzxcvbnm](.*)/*$1/
-    - derive/(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1*$2/
-    - derive/(\w)(\w)[qwertyuiopasdfghjklzxcvbnm](\w)/$1$2*$3/
-    - derive/(.*)[qwertyuiopasdfghjklzxcvbnm]/$1*/

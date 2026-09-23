@@ -65,14 +65,22 @@ function M.func(input, env)
         is_radical_mode = true
     end
     
-    if context:get_option("sentence") or schema_id or is_radical_mode then
+    if context:get_option("sentence") or schema_id or is_radical_mode or not (char_option or word_option) then
+        for cand in input:iter() do
+            yield(cand)
+        end
+        return
+    end
+
+    -- 码长小于4时无需进行顶屏检测，直接流式返回，保护惰性求值
+    if input_len < 4 then
         for cand in input:iter() do
             yield(cand)
         end
         return
     end
     
-    -- ========== 收集所有候选词 ==========
+    -- ========== 收集候选词（仅在码长>=4时） ==========
     local all_candidates = {}
     local candidate_count = 0
     

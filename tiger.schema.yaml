@@ -1,5 +1,3 @@
-__include: wanxiang_pro.schema.yaml:/
-
 schema:
   schema_id: tiger
   name: 万象虎
@@ -53,6 +51,95 @@ switches:
     states: [ 关, U编]
   - name: chinese_english
     states: [ 关, 翻译 ]
+
+# 移动端性能优化轻量引擎（保留拼音反查、拆分提示与重复上屏）
+engine:
+  processors:
+    - lua_processor@*quick_symbol_text2   # 快符引导以及重复上屏（双击单引号）
+    - ascii_composer                       # 处理英文模式及中英文切换
+    - recognizer                           # 处理网址、反查等 tags
+    - key_binder                           # 快捷键绑定
+    - speller                              # 拼写处理器
+    - punctuator                           # 符号处理器
+    - selector                             # 选字处理器
+    - navigator                            # 光标移动
+    - express_editor                       # 编辑器
+  segmentors:
+    - ascii_segmentor                      # 英文段落
+    - matcher                              # 匹配 recognizer
+    - abc_segmentor                        # 常规文字段落
+    - affix_segmentor@yin_add_user        # 拼音反查 tag（' 或 `）
+    - affix_segmentor@add_user_dict        # 虎码自造词加词 tag
+    - punct_segmentor                      # 符号段落
+    - fallback_segmentor                   # 回退处理
+  translators:
+    - punct_translator                     # 标点符号
+    - lua_translator@*switch_translator    # 虎单、虎词（提供一简字、简词，受char/word开关控制）
+    - script_translator                    # 虎码主翻译器
+    - table_translator@tiger_en            # 虎码/英文混合
+    - script_translator@yin_add_user       # 拼音反查入口（'前缀或`后缀）
+    - script_translator@user_dict_set      # 虎码自造词之使用词汇入口
+    - script_translator@add_user_dict      # 虎码自造词之制造词汇入口
+    - history_translator@historySJ         # 手机按键重复上屏（按 z）
+  filters:
+    - lua_filter@*temporary_word           # 临时4码简词
+    - lua_filter@*chaifen                  # 拆分滤镜
+    - simplifier@pinyin                    # 拼音滤镜
+    - lua_filter@*unicode_display          # Unicode 编码显示
+    - lua_filter@*switch_filter            # 开关滤镜
+    - uniquifier                           # 去重
+
+# 关闭 303MB 庞大语法模型，消除手机端整句 Viterbi DP 繁重运算与内存消耗
+grammar:
+  language: ""
+
+# 拼音反查（'前缀 或 `后缀）
+yin_add_user:
+  tag: yin_add_user
+  dictionary: wanxiang_pro
+  initial_quality: -1
+  user_dict: zc
+  enable_completion: true
+  enable_user_dict: true
+  spelling_hints: 50
+  prefix: "'"
+  suffix: "`"
+  tips: "〔音〕"
+
+# 手机重复上屏（输入 z 重复上屏）
+historySJ:
+  input: z
+  size: 3
+  initial_quality: 99
+
+recognizer:
+  patterns:
+    yin_add_user: "^[A-Za-z']*`$|^'[A-Za-z']*$"
+    add_user_dict: "^`[A-Za-z']*$"
+    semicolon: ";;"
+
+# 拼音滤镜配置
+pinyin:
+  opencc_config: pinyin.json
+  option_name: pinyin
+  show_in_comment: true
+  comment_format:
+    - "xform/&nbsp;/ /"
+    - "xform/（/ /"
+    - "xform/）/ /"
+  tips: all
+
+key_binder:
+  bindings:
+    - { when: has_menu, accept: semicolon, send: 2 }
+    - { when: has_menu, accept: "Control+m", toggle: english_word }
+    - { when: has_menu, accept: "Control+q", toggle: yin }
+    - { when: has_menu, accept: "Control+y", toggle: pinyin }
+    - { when: has_menu, accept: "Control+z", toggle: chaifen }
+    - { when: has_menu, accept: "Control+r", toggle: completion }
+    - { when: has_menu, accept: "Control+a", toggle: sentence }
+    - { when: has_menu, accept: "Control+s", toggle: word }
+    - { when: has_menu, accept: "Control+d", toggle: char }
 
 translator:
   dictionary: tiger
@@ -139,3 +226,42 @@ char_word:
 enum:
   chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
   jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码
+
+punctuator:
+  digit_separators: ":,."
+  half_shape:
+    ",": "，"
+    ".": "。"
+    "<": "《"
+    ">": "》"
+    "/": "、"
+    "?": "？"
+    ";": "；"
+    ":": "："
+    "!": "！"
+    '"': { pair: [ '“', '”' ] }
+    "'": { pair: [ '‘', '’' ] }
+    "(": "（"
+    ")": "）"
+    "[": "【"
+    "]": "】"
+    "{": "「"
+    "}": "」"
+    "_": "——"
+    "~": "～"
+    "\\": "、"
+    "$": "￥"
+    "^": "……"
+    "`": "`"
+    "*": "·"
+    "=": "="
+    "+": "+"
+    "-": "-"
+  full_shape:
+    " ": { commit: "　" }
+    ",": { commit: "，" }
+    ".": { commit: "。" }
+    "?": { commit: "？" }
+    "!": { commit: "！" }
+    ":": { commit: "：" }
+    ";": { commit: "；" }

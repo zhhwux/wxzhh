@@ -12,10 +12,11 @@ import_tables:
   - zuci/ext               #扩展词库
   - zuci/moegirl           #萌娘词库
   
-  - zuci/jichu.pro         #基础词库，2-3字词汇
-  - zuci/lianxiang.pro     #联想词库，5字以上词汇，多用于输入前半段第二候选可以出来整段
+  - zuci/jichu_lite        #基础词库（高频精选版，2-3字词汇）
+  #- zuci/jichu.pro        #基础词库全量版（147万条，手机端开启会导致卡顿）
+  #- zuci/lianxiang.pro    #联想词库，5字以上词汇，手机端建议按需开启
   - zuci/duoyin.pro        #兼容词库，是基础词库的扩充，收录了多场景多种读音的词组
-  - zuci/shici.pro         #诗词
+  #- zuci/shici.pro        #诗词库（6.3MB），手机端建议注释
   - zuci/diming.pro        #地名
 #  - zuci/wuzhong.pro       #物种多样性
 ...

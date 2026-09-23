@@ -170,17 +170,17 @@ local function processor(key_event, env)
     local input_len = #env.engine.context.input
     -- 长度为2时（包括 ;; 和 '`），激活处理器
     if input_len == 2 then
-        return true
+        return 2
     end
     -- 匹配自定义触发键长度
     if #env.trigger_list > 0 then
         for _, trigger in ipairs(env.trigger_list) do
             if input_len == #trigger then
-                return true
+                return 2
             end
         end
     end
-    return false
+    return 2
 end
 
 return { init = init, fini = fini, func = processor }

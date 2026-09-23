@@ -685,7 +685,7 @@ function merged_dict.func(input, env)
         local ok, l = pcall(env.en_dict.func, ctx, s)
         if ok and l then for _, c in ipairs(l) do yield(c) end end
     end
-    collectgarbage("step", 20)
+    -- collectgarbage("step", 20) -- 避免每次按键强制触发 GC 造成卡顿
 end
 
 function merged_dict.fini(env)
