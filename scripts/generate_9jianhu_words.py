@@ -271,7 +271,7 @@ def main():
     print(f"Encoded {count_4} four-character words.")
 
     # 2. Encode 2-character high-frequency words
-    two_words = load_two_char_words(tigress_ci_candidates, min_weight=1500)
+    two_words = load_two_char_words(tigress_ci_candidates, min_weight=900)
     count_2 = 0
     for word, (code, weight) in two_words.items():
         if any(c not in KEY_TO_LETTER for c in code):
