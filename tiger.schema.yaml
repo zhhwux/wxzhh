@@ -1,5 +1,3 @@
-__include: wanxiang_pro.schema.yaml:/
-
 schema:
   schema_id: tiger
   name: 万象虎
@@ -7,7 +5,6 @@ schema:
     - tiger_en
     - tiger_lookup 
     - tigress
-    - wanxiang_pro
 
 switches:
   - name: english_word   #中英单词
@@ -229,3 +226,42 @@ char_word:
 enum:
   chaifen: all     # 2种选择， char|all 只显示单字拆分|完全拆分
   jianci: 1230    # 2种选择， 1230|1234 四字以上造词规则：取前3字+末字首码|取前4字首码
+
+punctuator:
+  digit_separators: ":,."
+  half_shape:
+    ",": "，"
+    ".": "。"
+    "<": "《"
+    ">": "》"
+    "/": "、"
+    "?": "？"
+    ";": "；"
+    ":": "："
+    "!": "！"
+    '"': { pair: [ '“', '”' ] }
+    "'": { pair: [ '‘', '’' ] }
+    "(": "（"
+    ")": "）"
+    "[": "【"
+    "]": "】"
+    "{": "「"
+    "}": "」"
+    "_": "——"
+    "~": "～"
+    "\\": "、"
+    "$": "￥"
+    "^": "……"
+    "`": "`"
+    "*": "·"
+    "=": "="
+    "+": "+"
+    "-": "-"
+  full_shape:
+    " ": { commit: "　" }
+    ",": { commit: "，" }
+    ".": { commit: "。" }
+    "?": { commit: "？" }
+    "!": { commit: "！" }
+    ":": { commit: "：" }
+    ";": { commit: "；" }

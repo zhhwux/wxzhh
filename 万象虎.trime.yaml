@@ -1490,21 +1490,21 @@ preset_keyboards:
     keys:
       # 第 1 行
       - { click: '。', long_click: '？', width: 16, key_back_color: off_key_back_color, __include: styl/key }
-      - { click: '9hukeyqw', long_click: '1', width: 22, __include: styl/key } 
-      - { click: '9hukeyabc', long_click: '2', width: 22, __include: styl/key }
-      - { click: '9hukeydef', long_click: '3', width: 22, __include: styl/key }
+      - { click: '9hukeyqw', swipe_up: '！', long_click: '1', width: 22, __include: styl/key } 
+      - { click: '9hukeyabc', swipe_up: '：', long_click: '2', width: 22, __include: styl/key }
+      - { click: '9hukeydef', swipe_up: '；', long_click: '3', width: 22, __include: styl/key }
       - { click: BS, width: 18, key_back_color: off_key_back_color,  __include: styl/key }
       # 第 2 行
       - { click: '，', long_click: '、', width: 16, key_back_color: off_key_back_color, __include: styl/key }
-      - { click: '9hukeyghi', long_click: '4', width: 22, __include: styl/key }
-      - { click: '9hukeyjkl', long_click: '5', width: 22, __include: styl/key }
-      - { click: '9hukeymno', long_click: '6', width: 22, __include: styl/key }
+      - { click: '9hukeyghi', swipe_up: '“”{Left}', long_click: '4', width: 22, __include: styl/key }
+      - { click: '9hukeyjkl', swipe_up: '……', long_click: '5', width: 22, __include: styl/key }
+      - { click: '9hukeymno', swipe_up: '——', long_click: '6', width: 22, __include: styl/key }
       - { click: 'Escape1', long_click: '`', width: 18, key_back_color: off_key_back_color, __include: styl/key }
       # 第 3 行
       - { click: Keyboard_9jianhu_26, width: 16, long_click: cut, key_back_color: off_key_back_color, __include: styl/key } 
-      - { click: '9hukeyprs', long_click: '7', width: 22, __include: styl/key }
-      - { click: '9hukeytuv', long_click: '8', width: 22, __include: styl/key }
-      - { click: '9hukeyxyz', long_click: '9', width: 22, __include: styl/key }
+      - { click: '9hukeyprs', swipe_up: '（）{Left}', long_click: '7', width: 22, __include: styl/key }
+      - { click: '9hukeytuv', swipe_up: '《》{Left}', long_click: '8', width: 22, __include: styl/key }
+      - { click: '9hukeyxyz', swipe_up: '～', long_click: '9', width: 22, __include: styl/key }
       - { click: 'split_word', long_click: paste, width: 18, key_back_color: off_key_back_color, __include: styl/key }
       # 第 4 行
       - { click: Keyboard_symbols_9jianhu, long_click: Color_switch, composing: Tab, width: 16, key_back_color: off_key_back_color, __include: styl/key }   
